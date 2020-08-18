@@ -2,13 +2,17 @@ let array = [];
 
 function setup() {
     createCanvas(650, 400);
+    slider = createSlider(1, 60, 30, 1);
+    slider.position(25, 420);
+    slider.size(600, 15);
+    frameRate(slider.value());
     for (let i = 0; i < 41; i++) {
         array.push(int(map(random(1, 100), 1, 100, 30, height - 30)));
     }
-    frameRate(30);
 }
 
 function draw() {
+    frameRate(slider.value());
     background(100);
     bubble_sort();
 }
