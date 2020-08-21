@@ -1,5 +1,5 @@
 /**************************************************************
-************************Bubble Sort****************************
+********************    Bubble Sort    ************************
 **************************************************************/
 
 let bubble = {
@@ -10,6 +10,7 @@ let bubble = {
 
 function bubble_sort() {
     bubble.flag = true;
+    iteration++;
 
     // draw the array element after every swap
     for (let k = 0; k < array.length; k++) {
@@ -42,6 +43,7 @@ function bubble_sort() {
 }
 
 
+/****************  halka valo bubble sort  ******************/
 let _bubble = {
     i : 0,
     j : 0,
@@ -50,6 +52,7 @@ let _bubble = {
 let flag = false;
 function bubble_sort_halka_valo() {
     _bubble.flag = true;
+    iteration++;
 
     // draw the array element after every swap
     for (let k = 0; k < array.length; k++) {
@@ -94,7 +97,7 @@ function bubble_sort_halka_valo() {
 
 
 /**************************************************************
-************************Selection Sort*************************
+********************    Selection Sort    *********************
 **************************************************************/
 
 let selection = {
@@ -105,6 +108,7 @@ let selection = {
 }
 function selection_sort() {
     selection.flag = true;
+    iteration++;
 
     // draw the array element after every swap
     for (let k = 0; k < array.length; k++) {
@@ -145,7 +149,7 @@ function selection_sort() {
 
 
 /**************************************************************
-************************Insertion Sort*************************
+*******************     Insertion Sort      ********************
 **************************************************************/
 
 let insertion = {
@@ -158,6 +162,8 @@ let insertion = {
 let t = true;
 function insertion_sort() {
     insertion.flag = true;
+    iteration++;
+
     if (t) {  //nahole array[1] undefined astechilo..karon insertion.temp global var
         insertion.temp = array[1];
         t = false;
