@@ -17,7 +17,6 @@ To get a local copy on your machine
 git clone https://github.com/Ehsanul-Karim-Pappu/sorting_algo_visualization.git
 ```
 
-<<<<<<< HEAD
 ## Algorithms
    
 -   Bubble Sort
