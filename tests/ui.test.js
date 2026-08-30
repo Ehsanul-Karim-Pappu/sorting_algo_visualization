@@ -63,5 +63,7 @@ test("the page ships the complete learning and playback surfaces", async () => {
   assert.match(app, /node\.animate\(/);
   assert.match(styles, /@media \(prefers-reduced-motion: reduce\)/);
   assert.match(styles, /@media \(max-width: 660px\)/);
+  assert.match(styles, /min-height: 176px/);
+  assert.match(styles, /min-height: 4\.35em/);
   assert.match(html, /<script type="module" src="\.\/app\.js"><\/script>/);
 });

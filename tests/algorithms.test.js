@@ -110,6 +110,19 @@ test("the compatibility iterator reaches the same final result", () => {
   assert.deepEqual(steps.at(-1).values, [1, 2, 3, 4]);
 });
 
+test("trace narration stays concise for a stable mobile layout", () => {
+  for (const algorithmId of ALGORITHM_IDS) {
+    const input = createDataset("reversed", 36);
+    const trace = createTrace(algorithmId, input);
+
+    for (const step of trace.steps) {
+      assert.equal(step.title.length <= 60, true);
+      assert.equal(step.message.length <= 120, true);
+      assert.equal(step.detail.length <= 100, true);
+    }
+  }
+});
+
 test("dataset presets create the requested shape and size", () => {
   const size = 18;
   const randomValues = [0.12, 0.77, 0.31, 0.94, 0.48];

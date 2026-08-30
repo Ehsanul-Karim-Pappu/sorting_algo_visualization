@@ -576,13 +576,14 @@ function mergeTrace(items, stats, record) {
       writeIndex += 1;
     }
 
+    const mergedValues = items.slice(start, end).map((item) => item.value);
     record({
       type: "merged",
       title: `Positions ${start + 1}–${end} are merged`,
-      message: `This entire range is now sorted: ${items
-        .slice(start, end)
-        .map((item) => item.value)
-        .join(", ")}.`,
+      message:
+        mergedValues.length <= 8
+          ? `This range is now sorted: ${mergedValues.join(", ")}.`
+          : `All ${mergedValues.length} values in positions ${start + 1}–${end} are now sorted.`,
       detail: "The sorted range can now participate in the merge one level above it.",
       line: "merged",
       active: range(start, end),
@@ -625,7 +626,10 @@ export function createTrace(algorithmId, input) {
   record({
     type: "done",
     title: "Array sorted",
-    message: `${algorithm.name} produced ${items.map((item) => item.value).join(", ") || "an empty array"}.`,
+    message:
+      items.length === 0
+        ? `${algorithm.name} finished; there were no values to reorder.`
+        : `${algorithm.name} finished sorting ${items.length} ${items.length === 1 ? "value" : "values"} into ascending order.`,
     detail: `Finished with ${stats.comparisons} comparisons, ${stats.swaps} swaps, and ${stats.writes} writes.`,
     sorted: range(0, items.length),
   });

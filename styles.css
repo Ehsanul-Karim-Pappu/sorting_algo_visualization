@@ -1455,8 +1455,19 @@ a:focus-visible {
 
   .narration {
     grid-template-columns: 40px minmax(0, 1fr);
+    align-items: start;
     gap: 12px;
+    min-height: 176px;
     padding: 15px;
+  }
+
+  .step-title {
+    min-height: 2.4em;
+  }
+
+  .status-copy,
+  .step-detail {
+    min-height: 4.35em;
   }
 
   .narration-index {
