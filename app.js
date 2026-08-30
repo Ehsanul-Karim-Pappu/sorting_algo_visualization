@@ -251,8 +251,12 @@ function restoreUrlState() {
   if (algorithm && ALGORITHMS[algorithm]) elements.algorithm.value = algorithm;
   if (dataset && DATASET_TYPES.has(dataset)) elements.dataset.value = dataset;
   if (detail && TRACE_DETAIL_MODES[detail]) elements.detail.value = detail;
-  if (Number.isInteger(size) && size >= 6 && size <= 36) elements.size.value = String(size);
-  if (Number.isSafeInteger(seed) && seed >= 0 && seed <= 2147483647) elements.seed.value = String(seed);
+  if (params.has("size") && Number.isInteger(size) && size >= 6 && size <= 36) {
+    elements.size.value = String(size);
+  }
+  if (params.has("seed") && Number.isSafeInteger(seed) && seed >= 0 && seed <= 2147483647) {
+    elements.seed.value = String(seed);
+  }
   if (compare && ALGORITHMS[compare]) elements.compareAlgorithm.value = compare;
   if (params.has("values")) elements.customData.value = params.get("values");
 
@@ -991,7 +995,7 @@ elements.size.addEventListener("change", () => {
 });
 elements.speed.addEventListener("input", updateSpeedLabel);
 elements.detail.addEventListener("change", () => rebuildTraces());
-elements.seed.addEventListener("change", () => {
+elements.seed.addEventListener("input", () => {
   if (elements.dataset.value !== "custom") generateData();
 });
 elements.newData.addEventListener("click", () => generateData({ advanceSeed: true }));
