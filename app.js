@@ -212,6 +212,7 @@ function setFocusMode(enabled) {
   state.focusMode = Boolean(enabled);
   document.body.dataset.focusMode = String(state.focusMode);
   elements.focusMode.setAttribute("aria-pressed", String(state.focusMode));
+  elements.focusMode.setAttribute("aria-label", state.focusMode ? "Exit Focus Mode" : "Enter Focus Mode");
   elements.focusLabel.textContent = state.focusMode ? "Exit focus" : "Focus";
   elements.focusMode.querySelector("span[aria-hidden]").textContent = state.focusMode ? "×" : "⛶";
 

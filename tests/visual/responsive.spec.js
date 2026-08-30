@@ -92,7 +92,7 @@ test("custom data, compact traces, share state, and Focus Mode work together", a
   const compactMaximum = Number(await page.locator("#timeline").getAttribute("max"));
   expect(compactMaximum).toBeLessThan(fullMaximum);
 
-  await page.getByRole("button", { name: "Focus" }).click();
+  await page.getByRole("button", { name: "Enter Focus Mode" }).click();
   await expect(page.locator("body")).toHaveAttribute("data-focus-mode", "true");
   await expect(page.locator(".topbar")).toBeHidden();
   const transportPosition = await page.locator(".transport").evaluate((node) => getComputedStyle(node).position);
