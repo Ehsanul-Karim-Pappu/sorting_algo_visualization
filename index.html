@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta
       name="description"
       content="SortScope is an interactive sorting algorithm theater with synchronized movement, pseudocode, narration, metrics, and a reversible timeline."
@@ -81,6 +81,7 @@
                 <option value="nearly-sorted">Nearly sorted</option>
                 <option value="reversed">Reversed</option>
                 <option value="few-unique">Few unique values</option>
+                <option value="custom">Custom array</option>
               </select>
             </label>
 
@@ -100,10 +101,69 @@
               <input id="speed" type="range" min="1" max="100" value="48" step="1" />
             </label>
 
+            <label class="field" for="detail">
+              <span>Trace detail</span>
+              <select id="detail">
+                <option value="all">Every operation</option>
+                <option value="decisions">Key decisions</option>
+                <option value="milestones">Fast finish</option>
+              </select>
+            </label>
+
+            <label class="field" for="seed">
+              <span>Data seed</span>
+              <input id="seed" class="number-input" type="number" min="0" max="2147483647" value="2026" inputmode="numeric" />
+            </label>
+
             <button id="new-data" class="new-data-button" type="button">
               <span class="button-spark" aria-hidden="true">✦</span>
               New data
             </button>
+          </div>
+
+          <div class="control-extras">
+            <button id="compare-toggle" class="secondary-button" type="button" aria-pressed="false">
+              <span aria-hidden="true">⇄</span>
+              Compare algorithms
+            </button>
+
+            <label id="compare-field" class="field compare-field" for="compare-algorithm" hidden>
+              <span>Compare with</span>
+              <select id="compare-algorithm">
+                <option value="bubble">Bubble Sort</option>
+                <option value="cocktail">Cocktail Shaker Sort</option>
+                <option value="selection">Selection Sort</option>
+                <option value="insertion">Insertion Sort</option>
+                <option value="merge">Merge Sort</option>
+                <option value="quick">Quick Sort</option>
+                <option value="heap">Heap Sort</option>
+                <option value="shell">Shell Sort</option>
+                <option value="counting">Counting Sort</option>
+                <option value="radix">Radix Sort</option>
+              </select>
+            </label>
+
+            <button id="share-link" class="secondary-button" type="button">
+              <span aria-hidden="true">↗</span>
+              Copy share link
+            </button>
+            <output id="share-status" class="share-status" aria-live="polite"></output>
+          </div>
+
+          <div id="custom-data-panel" class="custom-data-panel" hidden>
+            <label class="field custom-data-field" for="custom-data">
+              <span>Custom values</span>
+              <input
+                id="custom-data"
+                type="text"
+                inputmode="numeric"
+                autocomplete="off"
+                value="42, 17, 63, 8, 29, 51, 34, 12"
+                placeholder="Example: 42, 17, 63, 8"
+              />
+            </label>
+            <button id="apply-custom" class="new-data-button" type="button">Apply array</button>
+            <p id="custom-error" class="custom-error" role="alert"></p>
           </div>
         </section>
 
@@ -131,53 +191,80 @@
                 <p class="panel-kicker">02 / Live execution</p>
                 <h2 id="stage-title">Bubble Sort</h2>
               </div>
-              <div class="trace-position" aria-label="Current trace position">
-                <span>Trace</span>
-                <output id="trace-position">0 / 0</output>
+              <div class="theater-heading-actions">
+                <button id="focus-mode" class="focus-button" type="button" aria-pressed="false">
+                  <span aria-hidden="true">⛶</span>
+                  <span id="focus-label">Focus</span>
+                </button>
+                <div class="trace-position" aria-label="Current trace position">
+                  <span>Trace</span>
+                  <output id="trace-position">0 / 0</output>
+                </div>
               </div>
             </header>
 
-            <div class="stage-shell">
-              <div class="stage-status">
-                <div class="operation-state">
-                  <span class="status-orb" aria-hidden="true"></span>
+            <div id="stage-grid" class="stage-grid" data-compare="false">
+              <div class="stage-shell">
+                <div class="stage-status">
+                  <div class="operation-state">
+                    <span class="status-orb" aria-hidden="true"></span>
+                    <div>
+                      <span>Current operation</span>
+                      <strong id="operation-label">Ready</strong>
+                    </div>
+                  </div>
+                  <output id="range-readout">16 values</output>
+                </div>
+
+                <div id="inspection" class="inspection" data-active="false">
+                  <p id="inspection-note">Compared values will appear here.</p>
+                  <div class="inspection-equation" aria-label="Current comparison">
+                    <div class="operand">
+                      <span id="left-label">left</span>
+                      <strong id="left-value">—</strong>
+                    </div>
+                    <span id="operator" class="operator">?</span>
+                    <div class="operand">
+                      <span id="right-label">right</span>
+                      <strong id="right-value">—</strong>
+                    </div>
+                    <div id="comparison-result" class="comparison-result">Waiting</div>
+                  </div>
+                </div>
+
+                <div id="native-visual" class="native-visual" hidden></div>
+
+                <div
+                  id="bars"
+                  class="bars"
+                  role="img"
+                  aria-label="Sorting visualization ready"
+                ></div>
+
+                <div class="stage-legend" aria-label="Visualization legend">
+                  <span><i class="legend-dot compare"></i>Compare</span>
+                  <span><i class="legend-dot moving"></i>Move</span>
+                  <span><i class="legend-dot candidate"></i>Candidate</span>
+                  <span><i class="legend-dot sorted"></i>Sorted</span>
+                </div>
+              </div>
+
+              <section id="compare-stage" class="compare-stage" aria-labelledby="compare-stage-title" hidden>
+                <header class="compare-stage-heading">
                   <div>
-                    <span>Current operation</span>
-                    <strong id="operation-label">Ready</strong>
+                    <p>Synchronized comparison</p>
+                    <h3 id="compare-stage-title">Selection Sort</h3>
                   </div>
-                </div>
-                <output id="range-readout">16 values</output>
-              </div>
-
-              <div id="inspection" class="inspection" data-active="false">
-                <p id="inspection-note">Compared values will appear here.</p>
-                <div class="inspection-equation" aria-label="Current comparison">
-                  <div class="operand">
-                    <span id="left-label">left</span>
-                    <strong id="left-value">—</strong>
-                  </div>
-                  <span id="operator" class="operator">?</span>
-                  <div class="operand">
-                    <span id="right-label">right</span>
-                    <strong id="right-value">—</strong>
-                  </div>
-                  <div id="comparison-result" class="comparison-result">Waiting</div>
-                </div>
-              </div>
-
-              <div
-                id="bars"
-                class="bars"
-                role="img"
-                aria-label="Sorting visualization ready"
-              ></div>
-
-              <div class="stage-legend" aria-label="Visualization legend">
-                <span><i class="legend-dot compare"></i>Compare</span>
-                <span><i class="legend-dot moving"></i>Move</span>
-                <span><i class="legend-dot candidate"></i>Candidate</span>
-                <span><i class="legend-dot sorted"></i>Sorted</span>
-              </div>
+                  <output id="compare-trace-position">0 / 0</output>
+                </header>
+                <div id="compare-native-visual" class="native-visual compact" hidden></div>
+                <div id="compare-bars" class="compare-bars" role="img" aria-label="Comparison algorithm visualization"></div>
+                <dl class="compare-metrics" aria-label="Comparison algorithm metrics">
+                  <div><dt>Comparisons</dt><dd id="compare-comparisons">0</dd></div>
+                  <div><dt>Swaps</dt><dd id="compare-swaps">0</dd></div>
+                  <div><dt>Writes</dt><dd id="compare-writes">0</dd></div>
+                </dl>
+              </section>
             </div>
 
             <div class="narration">
@@ -225,6 +312,8 @@
               <kbd>R</kbd> restart
               <span>·</span>
               <kbd>N</kbd> new data
+              <span>·</span>
+              <kbd>F</kbd> focus
             </p>
           </section>
 

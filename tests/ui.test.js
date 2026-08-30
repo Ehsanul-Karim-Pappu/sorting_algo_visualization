@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
 import test from "node:test";
 
 const projectRoot = new URL("../", import.meta.url);
@@ -29,7 +29,17 @@ test("every DOM selector used by the controller exists exactly once", async () =
 test("primary controls have programmatic labels and accessible status", async () => {
   const html = await source("index.html");
 
-  for (const id of ["algorithm", "dataset", "size", "speed", "timeline"]) {
+  for (const id of [
+    "algorithm",
+    "dataset",
+    "size",
+    "speed",
+    "detail",
+    "seed",
+    "compare-algorithm",
+    "custom-data",
+    "timeline",
+  ]) {
     assert.match(html, new RegExp(`<label[^>]+for="${id}"`));
   }
 
@@ -62,7 +72,17 @@ test("the page ships the complete learning and playback surfaces", async () => {
     assert.match(html, new RegExp(`value="${algorithm}"`));
   }
 
-  for (const id of ["pseudocode", "inspection", "previous", "next", "timeline"]) {
+  for (const id of [
+    "pseudocode",
+    "inspection",
+    "native-visual",
+    "compare-stage",
+    "custom-data-panel",
+    "focus-mode",
+    "previous",
+    "next",
+    "timeline",
+  ]) {
     assert.match(html, new RegExp(`id="${id}"`));
   }
 
@@ -72,10 +92,39 @@ test("the page ships the complete learning and playback surfaces", async () => {
     /const requestedCursor = elements\.timeline\.value;\s+stopPlayback\(\);\s+setCursor\(requestedCursor\);/,
   );
   assert.match(app, /node\.animate\(/);
+  assert.match(app, /URLSearchParams/);
+  assert.match(app, /seededRandom/);
+  assert.match(app, /renderNativeView/);
+  assert.match(app, /renderComparison/);
+  assert.match(app, /setFocusMode/);
   assert.match(styles, /@media \(prefers-reduced-motion: reduce\)/);
   assert.match(styles, /@media \(max-width: 660px\)/);
   assert.match(styles, /\.inspection\s*\{\s*height: 112px;\s*\}/);
   assert.match(styles, /min-height: 176px/);
   assert.match(styles, /min-height: 4\.35em/);
   assert.match(html, /<script type="module" src="\.\/app\.js"><\/script>/);
+});
+
+test("algorithm implementations are split into focused modules", async () => {
+  const files = await readdir(new URL("algorithms/", projectRoot));
+  for (const name of [
+    "bubble.js",
+    "cocktail.js",
+    "selection.js",
+    "insertion.js",
+    "merge.js",
+    "quick.js",
+    "heap.js",
+    "shell.js",
+    "counting.js",
+    "radix.js",
+    "catalog.js",
+    "shared.js",
+    "trace-detail.js",
+  ]) {
+    assert.equal(files.includes(name), true, `${name} should exist`);
+  }
+
+  const facade = await source("algorithms.js");
+  assert.equal(facade.split("\n").length < 150, true, "algorithms.js should remain a small facade");
 });
