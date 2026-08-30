@@ -74,7 +74,7 @@ for (const algorithmId of ALGORITHM_IDS) {
 test("stable algorithms preserve the original order of equal values", () => {
   const input = [3, 1, 3, 2, 1, 3];
 
-  for (const algorithmId of ["bubble", "insertion", "merge"]) {
+  for (const algorithmId of ["bubble", "insertion", "merge", "counting", "radix", "cocktail"]) {
     const finalItems = createTrace(algorithmId, input).steps.at(-1).items;
 
     for (const value of new Set(input)) {
@@ -103,6 +103,31 @@ test("merge sort counts comparisons separately from writes", () => {
   assert.equal(result.comparisons, 4);
   assert.equal(result.writes, 8);
   assert.equal(result.swaps, 0);
+});
+
+test("non-comparison sorts do not compare value pairs", () => {
+  for (const algorithmId of ["counting", "radix"]) {
+    const result = createTrace(algorithmId, [7, -2, 7, 0, -9, 4]).stats;
+    assert.equal(result.comparisons, 0);
+    assert.equal(result.swaps, 0);
+    assert.equal(result.writes > 0, true);
+  }
+});
+
+test("quick and heap traces expose their defining operations", () => {
+  const quickTypes = new Set(createTrace("quick", [4, 1, 5, 2, 3]).steps.map((step) => step.type));
+  const heapTypes = new Set(createTrace("heap", [4, 1, 5, 2, 3]).steps.map((step) => step.type));
+
+  assert.equal(quickTypes.has("pivot"), true);
+  assert.equal(quickTypes.has("partition"), true);
+  assert.equal(heapTypes.has("heap"), true);
+  assert.equal(heapTypes.has("extract"), true);
+});
+
+test("integer distribution sorts reject unsupported numeric inputs", () => {
+  assert.throws(() => createTrace("counting", [1, 2.5, 3]), /safe integer/);
+  assert.throws(() => createTrace("radix", [1, 2.5, 3]), /safe integer/);
+  assert.throws(() => createTrace("counting", [0, 700]), /range of at most 512/);
 });
 
 test("the compatibility iterator reaches the same final result", () => {

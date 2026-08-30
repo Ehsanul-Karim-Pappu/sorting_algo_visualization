@@ -47,7 +47,18 @@ test("the page ships the complete learning and playback surfaces", async () => {
     source("styles.css"),
   ]);
 
-  for (const algorithm of ["bubble", "selection", "insertion", "merge"]) {
+  for (const algorithm of [
+    "bubble",
+    "cocktail",
+    "selection",
+    "insertion",
+    "merge",
+    "quick",
+    "heap",
+    "shell",
+    "counting",
+    "radix",
+  ]) {
     assert.match(html, new RegExp(`value="${algorithm}"`));
   }
 

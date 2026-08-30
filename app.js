@@ -66,10 +66,20 @@ const OPERATION_LABELS = Object.freeze({
   merge: "Begin merge",
   write: "Write",
   merged: "Range merged",
+  partition: "Partition",
+  pivot: "Choose pivot",
+  heap: "Heap repair",
+  extract: "Extract maximum",
+  gap: "Set gap",
+  "gap-done": "Gap complete",
+  count: "Count value",
+  prefix: "Accumulate counts",
+  bucket: "Assign bucket",
+  digit: "Digit pass",
   done: "Complete",
 });
 
-const MOVEMENT_TYPES = new Set(["swap", "shift", "insert", "write"]);
+const MOVEMENT_TYPES = new Set(["swap", "shift", "insert", "write", "extract"]);
 const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
 const barNodes = new Map();
 

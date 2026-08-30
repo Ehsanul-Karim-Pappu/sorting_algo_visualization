@@ -53,10 +53,24 @@
             <label class="field" for="algorithm">
               <span>Algorithm</span>
               <select id="algorithm">
-                <option value="bubble">Bubble Sort</option>
-                <option value="selection">Selection Sort</option>
-                <option value="insertion">Insertion Sort</option>
-                <option value="merge">Merge Sort</option>
+                <optgroup label="Foundational">
+                  <option value="bubble">Bubble Sort</option>
+                  <option value="cocktail">Cocktail Shaker Sort</option>
+                  <option value="selection">Selection Sort</option>
+                  <option value="insertion">Insertion Sort</option>
+                </optgroup>
+                <optgroup label="Divide and conquer">
+                  <option value="merge">Merge Sort</option>
+                  <option value="quick">Quick Sort</option>
+                </optgroup>
+                <optgroup label="Tree and gap based">
+                  <option value="heap">Heap Sort</option>
+                  <option value="shell">Shell Sort</option>
+                </optgroup>
+                <optgroup label="Non-comparison">
+                  <option value="counting">Counting Sort</option>
+                  <option value="radix">Radix Sort</option>
+                </optgroup>
               </select>
             </label>
 

@@ -6,7 +6,7 @@ SortScope is a teaching-first sorting algorithm visualizer. It keeps the moving 
 
 ## What makes it useful
 
-- Bubble, Selection, Insertion, and Merge Sort
+- Ten algorithms spanning foundational, divide-and-conquer, heap/gap, and distribution families
 - Values retain their identity and physically move between positions
 - Synchronized pseudocode highlighting and decision narration
 - A comparison tray that shows the exact condition and result
@@ -26,6 +26,12 @@ SortScope is a teaching-first sorting algorithm visualizer. It keeps the moving 
 | Selection Sort | `O(n²)` | `O(n²)` | `O(n²)` | `O(1)` | No |
 | Insertion Sort | `O(n)` | `O(n²)` | `O(n²)` | `O(1)` | Yes |
 | Merge Sort | `O(n log n)` | `O(n log n)` | `O(n log n)` | `O(n)` | Yes |
+| Quick Sort | `O(n log n)` | `O(n log n)` | `O(n²)` | `O(log n)` | No |
+| Heap Sort | `O(n log n)` | `O(n log n)` | `O(n log n)` | `O(1)` | No |
+| Shell Sort | `O(n log n)` | `≈ O(n^1.5)` | `O(n²)` | `O(1)` | No |
+| Counting Sort | `O(n + k)` | `O(n + k)` | `O(n + k)` | `O(n + k)` | Yes |
+| Radix Sort | `O(d(n + 10))` | `O(d(n + 10))` | `O(d(n + 10))` | `O(n + 10)` | Yes |
+| Cocktail Shaker Sort | `O(n)` | `O(n²)` | `O(n²)` | `O(1)` | Yes |
 
 ## How the trace works
 
