@@ -1433,6 +1433,10 @@ a:focus-visible {
     padding: 13px;
   }
 
+  .inspection {
+    height: 112px;
+  }
+
   .inspection-equation {
     grid-template-columns: 1fr 25px 1fr;
     gap: 7px;
