@@ -1,4 +1,4 @@
-import { ALGORITHMS, createAlgorithm } from "./algorithms.js";
+import { ALGORITHMS, createDataset, createTrace } from "./algorithms.js";
 
 const elements = {
   algorithm: document.querySelector("#algorithm"),
@@ -8,399 +8,499 @@ const elements = {
   speed: document.querySelector("#speed"),
   speedValue: document.querySelector("#speed-value"),
   newData: document.querySelector("#new-data"),
-  play: document.querySelector("#play"),
-  pause: document.querySelector("#pause"),
-  step: document.querySelector("#step"),
-  reset: document.querySelector("#reset"),
-  bars: document.querySelector("#bars"),
-  status: document.querySelector("#status"),
+  codeAlgorithm: document.querySelector("#code-algorithm"),
+  pseudocode: document.querySelector("#pseudocode"),
+  invariant: document.querySelector("#invariant"),
+  stageTitle: document.querySelector("#stage-title"),
+  tracePosition: document.querySelector("#trace-position"),
   operationLabel: document.querySelector("#operation-label"),
-  activeValues: document.querySelector("#active-values"),
-  progress: document.querySelector("#progress"),
-  progressFill: document.querySelector("#progress-fill"),
-  progressValue: document.querySelector("#progress-value"),
-  itemCount: document.querySelector("#item-count"),
+  rangeReadout: document.querySelector("#range-readout"),
+  inspection: document.querySelector("#inspection"),
+  inspectionNote: document.querySelector("#inspection-note"),
+  leftLabel: document.querySelector("#left-label"),
+  leftValue: document.querySelector("#left-value"),
+  operator: document.querySelector("#operator"),
+  rightLabel: document.querySelector("#right-label"),
+  rightValue: document.querySelector("#right-value"),
+  comparisonResult: document.querySelector("#comparison-result"),
+  bars: document.querySelector("#bars"),
+  narrationIndex: document.querySelector("#narration-index"),
+  stepTitle: document.querySelector("#step-title"),
+  status: document.querySelector("#status"),
+  stepDetail: document.querySelector("#step-detail"),
+  restart: document.querySelector("#restart"),
+  previous: document.querySelector("#previous"),
+  play: document.querySelector("#play"),
+  playIcon: document.querySelector("#play-icon"),
+  playLabel: document.querySelector("#play-label"),
+  next: document.querySelector("#next"),
+  timeline: document.querySelector("#timeline"),
+  timelineValue: document.querySelector("#timeline-value"),
+  algorithmDescription: document.querySelector("#algorithm-description"),
   comparisons: document.querySelector("#comparisons"),
   swaps: document.querySelector("#swaps"),
   writes: document.querySelector("#writes"),
-  steps: document.querySelector("#steps"),
-  algorithmName: document.querySelector("#algorithm-name"),
-  algorithmDescription: document.querySelector("#algorithm-description"),
   bestComplexity: document.querySelector("#best-complexity"),
   averageComplexity: document.querySelector("#average-complexity"),
   worstComplexity: document.querySelector("#worst-complexity"),
   spaceComplexity: document.querySelector("#space-complexity"),
-  stable: document.querySelector("#stable"),
-  inPlace: document.querySelector("#in-place"),
-};
-
-const EMPTY_STATS = Object.freeze({
-  comparisons: 0,
-  swaps: 0,
-  writes: 0,
-  steps: 0,
-});
-
-const state = {
-  source: [],
-  iterator: null,
-  currentStep: null,
-  playing: false,
-  completed: false,
-  runToken: 0,
-  totalSteps: 0,
+  stabilityChip: document.querySelector("#stability-chip"),
+  stableProperty: document.querySelector("#stable-property"),
+  placeProperty: document.querySelector("#place-property"),
 };
 
 const OPERATION_LABELS = Object.freeze({
   idle: "Ready",
-  compare: "Comparing",
-  swap: "Swapping",
-  write: "Writing",
-  insert: "Inserting",
-  range: "Range merged",
+  pass: "New pass",
+  compare: "Compare",
+  swap: "Swap",
+  settled: "Position locked",
+  "early-stop": "Early exit",
+  select: "Select position",
+  candidate: "New candidate",
+  key: "Pick up key",
+  shift: "Shift",
+  insert: "Insert",
+  split: "Split range",
+  recurse: "Recurse",
+  merge: "Begin merge",
+  write: "Write",
+  merged: "Range merged",
+  partition: "Partition",
+  pivot: "Choose pivot",
+  heap: "Heap repair",
+  extract: "Extract maximum",
+  gap: "Set gap",
+  "gap-done": "Gap complete",
+  count: "Count value",
+  prefix: "Accumulate counts",
+  bucket: "Assign bucket",
+  digit: "Digit pass",
   done: "Complete",
 });
 
-function shuffle(values) {
-  const result = [...values];
+const MOVEMENT_TYPES = new Set(["swap", "shift", "insert", "write", "extract"]);
+const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+const barNodes = new Map();
 
-  for (let index = result.length - 1; index > 0; index -= 1) {
-    const randomIndex = Math.floor(Math.random() * (index + 1));
-    [result[index], result[randomIndex]] = [result[randomIndex], result[index]];
-  }
+const state = {
+  source: [],
+  trace: null,
+  cursor: 0,
+  playing: false,
+  playbackToken: 0,
+};
 
-  return result;
+function maximumCursor() {
+  return Math.max(0, (state.trace?.steps.length ?? 1) - 1);
 }
 
-function createDataset(kind, size) {
-  const ascending = Array.from({ length: size }, (_, index) => index + 1);
-
-  switch (kind) {
-    case "nearly-sorted": {
-      const values = [...ascending];
-      const swaps = Math.max(1, Math.floor(size / 8));
-
-      for (let count = 0; count < swaps; count += 1) {
-        const first = Math.floor(Math.random() * size);
-        const second = Math.floor(Math.random() * size);
-        [values[first], values[second]] = [values[second], values[first]];
-      }
-
-      return values;
-    }
-    case "reversed":
-      return ascending.reverse();
-    case "few-unique": {
-      const levels = Math.min(8, Math.max(3, Math.floor(size / 5)));
-      return Array.from({ length: size }, () => 1 + Math.floor(Math.random() * levels));
-    }
-    case "random":
-    default:
-      return shuffle(ascending);
-  }
+function currentStep() {
+  return state.trace.steps[state.cursor];
 }
 
-function idleStep(values, message = "Ready to visualize.") {
-  return {
-    values: [...values],
-    stats: { ...EMPTY_STATS },
-    type: "idle",
-    active: [],
-    sorted: [],
-    message,
-  };
-}
-
-function stopPlayback() {
-  state.playing = false;
-  state.runToken += 1;
-  updateButtons();
-}
-
-function countTotalSteps() {
-  let finalStep = null;
-
-  for (const step of createAlgorithm(elements.algorithm.value, state.source)) {
-    finalStep = step;
-  }
-
-  return finalStep?.stats.steps ?? 0;
-}
-
-function prepareRun(message = "Ready to visualize.") {
-  stopPlayback();
-  state.iterator = createAlgorithm(elements.algorithm.value, state.source);
-  state.currentStep = idleStep(state.source, message);
-  state.completed = false;
-  state.totalSteps = countTotalSteps();
-  render();
-}
-
-function generateData() {
-  const size = Number(elements.size.value);
-  state.source = createDataset(elements.dataset.value, size);
-  prepareRun("New data generated. Choose Play or Step.");
+function tempoLabel(speed) {
+  if (speed <= 20) return "Deliberate";
+  if (speed <= 55) return "Steady";
+  if (speed <= 82) return "Brisk";
+  return "Sprint";
 }
 
 function delayForSpeed() {
-  const speed = Number(elements.speed.value);
-  return Math.max(8, Math.round(610 - speed * 6));
+  return Math.max(55, Math.round(1110 - Number(elements.speed.value) * 10.5));
+}
+
+function movementDuration() {
+  return Math.min(520, Math.max(170, delayForSpeed() * 0.72));
 }
 
 function sleep(duration) {
   return new Promise((resolve) => window.setTimeout(resolve, duration));
 }
 
-function advance() {
-  if (state.completed) {
-    return false;
-  }
-
-  if (!state.iterator) {
-    state.iterator = createAlgorithm(elements.algorithm.value, state.source);
-  }
-
-  const next = state.iterator.next();
-
-  if (next.done) {
-    state.completed = true;
-    state.playing = false;
-    updateButtons();
-    return false;
-  }
-
-  state.currentStep = next.value;
-  state.completed = next.value.type === "done";
-
-  if (state.completed) {
-    state.playing = false;
-  }
-
-  render();
-  return !state.completed;
+function stopPlayback() {
+  state.playing = false;
+  state.playbackToken += 1;
+  renderTransport();
 }
 
-async function play() {
-  if (state.playing) {
-    return;
-  }
+function buildPseudocode() {
+  const algorithm = ALGORITHMS[elements.algorithm.value];
+  const fragment = document.createDocumentFragment();
 
-  if (state.completed) {
-    prepareRun("Restarted with the same data.");
-  }
+  algorithm.pseudocode.forEach((line, index) => {
+    const item = document.createElement("li");
+    const number = document.createElement("span");
+    const code = document.createElement("code");
 
-  state.playing = true;
-  const token = state.runToken + 1;
-  state.runToken = token;
-  updateButtons();
+    item.dataset.line = line.id;
+    item.style.setProperty("--depth", line.depth);
+    number.className = "code-line-number";
+    number.textContent = String(index + 1).padStart(2, "0");
+    code.textContent = line.code;
+    item.append(number, code);
+    fragment.append(item);
+  });
 
-  while (state.playing && token === state.runToken) {
-    const hasMore = advance();
-
-    if (!hasMore) {
-      break;
-    }
-
-    await sleep(delayForSpeed());
-  }
-
-  if (token === state.runToken) {
-    state.playing = false;
-    updateButtons();
-  }
+  elements.pseudocode.replaceChildren(fragment);
 }
 
-function pause() {
-  if (!state.playing) {
-    return;
-  }
+function renderAlgorithmDetails() {
+  const algorithm = ALGORITHMS[elements.algorithm.value];
 
-  stopPlayback();
-  state.currentStep = {
-    ...state.currentStep,
-    message: "Paused. Continue with Play or advance one operation with Step.",
-  };
-  render();
-}
-
-function stepOnce() {
-  stopPlayback();
-
-  if (state.completed) {
-    prepareRun("Restarted with the same data.");
-  }
-
-  advance();
-}
-
-function updateAlgorithmDetails() {
-  const details = ALGORITHMS[elements.algorithm.value];
+  document.documentElement.style.setProperty("--algorithm-accent", algorithm.accent);
   document.body.dataset.algorithm = elements.algorithm.value;
-  elements.algorithmName.textContent = details.name;
-  elements.algorithmDescription.textContent = details.description;
-  elements.bestComplexity.textContent = details.best;
-  elements.averageComplexity.textContent = details.average;
-  elements.worstComplexity.textContent = details.worst;
-  elements.spaceComplexity.textContent = details.space;
-  elements.stable.textContent = details.stable ? "Yes" : "No";
-  elements.inPlace.textContent = details.inPlace ? "Yes" : "No";
+  elements.codeAlgorithm.textContent = algorithm.shortName;
+  elements.stageTitle.textContent = algorithm.name;
+  elements.invariant.textContent = algorithm.invariant;
+  elements.algorithmDescription.textContent = algorithm.description;
+  elements.bestComplexity.textContent = algorithm.best;
+  elements.averageComplexity.textContent = algorithm.average;
+  elements.worstComplexity.textContent = algorithm.worst;
+  elements.spaceComplexity.textContent = algorithm.space;
+  elements.stabilityChip.textContent = algorithm.stable ? "Stable" : "Not stable";
+  elements.stabilityChip.dataset.positive = String(algorithm.stable);
+  elements.stableProperty.textContent = algorithm.stable ? "✓ Stable" : "○ Not stable";
+  elements.placeProperty.textContent = algorithm.inPlace ? "✓ In place" : "○ Extra array";
 }
 
-function barState(index, step, active, sorted) {
-  if (active.has(index)) {
-    return step.type;
+function rebuildTrace({ animate = false } = {}) {
+  stopPlayback();
+  state.trace = createTrace(elements.algorithm.value, state.source);
+  state.cursor = 0;
+  elements.timeline.max = String(maximumCursor());
+  buildPseudocode();
+  renderAlgorithmDetails();
+  render(null, animate);
+}
+
+function generateData() {
+  const size = Number(elements.size.value);
+  state.source = createDataset(elements.dataset.value, size);
+  rebuildTrace();
+}
+
+function createBarNode(item) {
+  const node = document.createElement("div");
+  const value = document.createElement("span");
+  const column = document.createElement("span");
+  const position = document.createElement("span");
+
+  node.className = "bar-item";
+  node.dataset.itemId = item.id;
+  node.setAttribute("aria-hidden", "true");
+  value.className = "bar-value";
+  column.className = "bar-column";
+  position.className = "bar-position";
+  node.append(value, column, position);
+  barNodes.set(item.id, node);
+  return node;
+}
+
+function captureBarPositions() {
+  const positions = new Map();
+
+  for (const [id, node] of barNodes) {
+    if (node.isConnected) {
+      positions.set(id, node.getBoundingClientRect());
+    }
   }
 
-  if (sorted.has(index)) {
-    return "sorted";
+  return positions;
+}
+
+function roleFor(item, step) {
+  if (step.type === "done" && step.sortedIds.includes(item.id)) return "sorted";
+  if (step.keyIds.includes(item.id)) return "key";
+  if (step.candidateIds.includes(item.id)) return "candidate";
+
+  if (step.activeIds.includes(item.id)) {
+    if (step.type === "compare") return "compare";
+    if (MOVEMENT_TYPES.has(step.type)) return "moving";
+    return "focus";
   }
 
+  if (step.sortedIds.includes(item.id)) return "sorted";
   return "default";
 }
 
-function ensureBarNodes(count) {
-  if (elements.bars.children.length === count) {
-    return Array.from(elements.bars.children);
-  }
-
+function renderBars(step, previousStep, animate) {
+  const oldPositions = captureBarPositions();
+  const relevantIds = new Set(step.items.map((item) => item.id));
   const fragment = document.createDocumentFragment();
+  const values = step.items.map((item) => item.value);
+  const minimum = Math.min(...values, 0);
+  const maximum = Math.max(...values, 1);
+  const spread = Math.max(1, maximum - minimum);
+  const showValues = step.items.length <= 24;
+  const showPositions = step.items.length <= 18;
 
-  for (let index = 0; index < count; index += 1) {
-    const bar = document.createElement("div");
-    const label = document.createElement("span");
-    bar.className = "bar";
-    bar.style.setProperty("--bar-index", index);
-    bar.setAttribute("aria-hidden", "true");
-    label.className = "bar-value";
-    bar.append(label);
-    fragment.append(bar);
+  for (const [id, node] of barNodes) {
+    if (!relevantIds.has(id)) {
+      node.remove();
+      barNodes.delete(id);
+    }
   }
+
+  step.items.forEach((item, index) => {
+    const node = barNodes.get(item.id) ?? createBarNode(item);
+    const height = 18 + ((item.value - minimum) / spread) * 72;
+    const inRange = !step.range || (index >= step.range[0] && index < step.range[1]);
+    const role = roleFor(item, step);
+
+    node.dataset.role = role;
+    node.dataset.operation = step.type;
+    node.dataset.inRange = String(inRange);
+    node.style.setProperty("--bar-height", `${height}%`);
+    node.style.setProperty("--bar-order", index);
+    node.querySelector(".bar-value").textContent = String(item.value);
+    node.querySelector(".bar-position").textContent = String(index + 1);
+    node.title = `Position ${index + 1}: ${item.value}`;
+    fragment.append(node);
+  });
 
   elements.bars.replaceChildren(fragment);
-  return Array.from(elements.bars.children);
-}
+  elements.bars.dataset.values = showValues ? "show" : "hide";
+  elements.bars.dataset.positions = showPositions ? "show" : "hide";
+  elements.bars.dataset.partitioned = String(Boolean(step.partition));
+  elements.bars.style.setProperty("--bar-count", step.items.length);
+  elements.bars.style.setProperty("--bar-gap", step.items.length > 28 ? "3px" : "clamp(5px, 0.65vw, 11px)");
 
-function renderBars(step) {
-  const maximum = Math.max(...step.values, 1);
-  const active = new Set(step.active);
-  const sorted = new Set(step.sorted);
-  const showValues = step.values.length <= 24;
-  const bars = ensureBarNodes(step.values.length);
-  const firstActive = step.active[0];
-  const focusPosition = Number.isInteger(firstActive)
-    ? ((firstActive + 0.5) / Math.max(step.values.length, 1)) * 100
-    : 50;
+  if (step.partition) {
+    const [, middle] = step.partition;
+    elements.bars.style.setProperty("--partition-x", `${(middle / step.items.length) * 100}%`);
+  }
 
-  elements.bars.style.setProperty("--bar-gap", step.values.length > 55 ? "2px" : "clamp(3px, 0.45vw, 7px)");
-  elements.bars.style.setProperty("--step-duration", `${Math.min(360, Math.max(55, delayForSpeed() * 0.72))}ms`);
-  elements.bars.style.setProperty("--focus-x", `${focusPosition}%`);
-  elements.bars.style.setProperty("--focus-opacity", step.active.length > 0 ? "1" : "0");
-  elements.bars.dataset.operation = step.type;
-  elements.bars.dataset.labels = showValues ? "show" : "hide";
+  if (animate && previousStep && !motionQuery.matches) {
+    const duration = movementDuration();
 
-  step.values.forEach((value, index) => {
-    const bar = bars[index];
-    const currentState = barState(index, step, active, sorted);
-    bar.dataset.state = currentState;
-    bar.style.height = `${Math.max(3, (value / maximum) * 100)}%`;
-    bar.title = `Position ${index + 1}: ${value}`;
-    bar.children[0].textContent = String(value);
-  });
+    for (const [id, oldPosition] of oldPositions) {
+      const node = barNodes.get(id);
+      if (!node || typeof node.animate !== "function") continue;
+
+      const newPosition = node.getBoundingClientRect();
+      const deltaX = oldPosition.left - newPosition.left;
+
+      if (Math.abs(deltaX) > 0.5) {
+        node.getAnimations().forEach((animation) => animation.cancel());
+        node.animate(
+          [
+            { transform: `translate3d(${deltaX}px, 0, 0)` },
+            { transform: "translate3d(0, 0, 0)" },
+          ],
+          {
+            duration,
+            easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+          },
+        );
+      }
+    }
+  }
 
   elements.bars.setAttribute(
     "aria-label",
-    `${ALGORITHMS[elements.algorithm.value].name} visualization with ${step.values.length} values. ${step.message}`,
+    `${ALGORITHMS[elements.algorithm.value].name}, step ${step.sequence}. ${step.message}`,
   );
 }
 
-function renderProgress(step) {
-  const percentage = state.completed
-    ? 100
-    : state.totalSteps > 0
-      ? Math.min(100, (step.stats.steps / state.totalSteps) * 100)
-      : 0;
+function renderInspector(step) {
+  const inspection = step.inspection;
+  elements.inspection.dataset.active = String(Boolean(inspection));
 
-  elements.progressFill.style.width = `${percentage}%`;
-  const roundedPercentage = Math.round(percentage);
-  elements.progressValue.textContent = percentage > 0 && roundedPercentage === 0 ? "<1%" : `${roundedPercentage}%`;
-  elements.progress.setAttribute("aria-valuenow", String(roundedPercentage));
+  if (!inspection) {
+    elements.inspectionNote.textContent =
+      step.detail || "Compared values will appear here as the algorithm makes a decision.";
+    return;
+  }
+
+  elements.leftLabel.textContent = inspection.left.label;
+  elements.leftValue.textContent = String(inspection.left.value);
+  elements.operator.textContent = inspection.operator;
+  elements.rightLabel.textContent = inspection.right.label;
+  elements.rightValue.textContent = String(inspection.right.value);
+  elements.comparisonResult.textContent = inspection.result;
+  elements.comparisonResult.dataset.truth = String(inspection.truth);
 }
 
-function renderOperation(step) {
-  const values = step.active
-    .map((index) => step.values[index])
-    .filter((value) => value !== undefined);
+function renderPseudocode(step) {
+  const lines = elements.pseudocode.querySelectorAll("li");
 
-  elements.operationLabel.textContent = OPERATION_LABELS[step.type] ?? "Working";
-  elements.activeValues.textContent = values.length > 0 ? values.join(" · ") : "—";
-  elements.itemCount.textContent = `${step.values.length} values`;
+  lines.forEach((line) => {
+    const active = line.dataset.line === step.line;
+    line.dataset.active = String(active);
+    if (active) {
+      line.setAttribute("aria-current", "step");
+    } else {
+      line.removeAttribute("aria-current");
+    }
+  });
 }
 
-function updateButtons() {
-  elements.play.disabled = state.playing;
-  elements.pause.disabled = !state.playing;
-  elements.step.disabled = state.playing;
-  elements.play.textContent = state.completed ? "Replay" : "Play";
+function renderRangeReadout(step) {
+  if (step.type === "done") {
+    elements.rangeReadout.textContent = `${step.items.length} / ${step.items.length} sorted`;
+    return;
+  }
+
+  if (step.range && step.range[1] > step.range[0]) {
+    elements.rangeReadout.textContent = `Focus: ${step.range[0] + 1}–${step.range[1]}`;
+    return;
+  }
+
+  elements.rangeReadout.textContent = `${step.items.length} values`;
 }
 
-function render() {
-  const step = state.currentStep ?? idleStep(state.source);
-  renderBars(step);
-  renderProgress(step);
-  renderOperation(step);
-  updateAlgorithmDetails();
-
-  elements.status.textContent = step.message;
-  elements.status.dataset.state = state.completed ? "complete" : step.type === "idle" ? "ready" : "running";
+function renderMetrics(step) {
   elements.comparisons.textContent = step.stats.comparisons.toLocaleString();
   elements.swaps.textContent = step.stats.swaps.toLocaleString();
   elements.writes.textContent = step.stats.writes.toLocaleString();
-  elements.steps.textContent = step.stats.steps.toLocaleString();
-  updateButtons();
 }
 
-elements.algorithm.addEventListener("change", () => {
-  updateAlgorithmDetails();
-  prepareRun("Algorithm changed. The current data is preserved.");
-});
+function renderTransport() {
+  if (!state.trace) return;
 
-elements.dataset.addEventListener("change", generateData);
-elements.newData.addEventListener("click", generateData);
-elements.play.addEventListener("click", play);
-elements.pause.addEventListener("click", pause);
-elements.step.addEventListener("click", stepOnce);
-elements.reset.addEventListener("click", () => prepareRun("Reset to the original data."));
+  const maximum = maximumCursor();
+  const percentage = maximum > 0 ? (state.cursor / maximum) * 100 : 0;
+  elements.restart.disabled = state.cursor === 0;
+  elements.previous.disabled = state.cursor === 0;
+  elements.next.disabled = state.cursor === maximum;
+  elements.play.disabled = maximum === 0;
+  elements.play.setAttribute("aria-pressed", String(state.playing));
+  elements.playIcon.textContent = state.playing ? "Ⅱ" : state.cursor === maximum ? "↺" : "▶";
+  elements.playLabel.textContent = state.playing
+    ? "Pause trace"
+    : state.cursor === maximum
+      ? "Replay trace"
+      : "Play trace";
+  elements.timeline.value = String(state.cursor);
+  elements.timelineValue.textContent = `${Math.round(percentage)}%`;
+  elements.timeline.style.setProperty("--timeline-progress", `${percentage}%`);
+}
 
-elements.size.addEventListener("input", () => {
+function render(previousStep = null, animate = true) {
+  const step = currentStep();
+  const maximum = maximumCursor();
+
+  document.body.dataset.operation = step.type;
+  elements.tracePosition.textContent = `${state.cursor} / ${maximum}`;
+  elements.operationLabel.textContent = OPERATION_LABELS[step.type] ?? "Working";
+  elements.narrationIndex.textContent = String(step.sequence).padStart(2, "0");
+  elements.stepTitle.textContent = step.title;
+  elements.status.textContent = step.message;
+  elements.stepDetail.textContent = step.detail;
+
+  renderBars(step, previousStep, animate);
+  renderInspector(step);
+  renderPseudocode(step);
+  renderRangeReadout(step);
+  renderMetrics(step);
+  renderTransport();
+}
+
+function setCursor(cursor, { animate = true } = {}) {
+  const nextCursor = Math.min(maximumCursor(), Math.max(0, Number(cursor)));
+  const previousStep = currentStep();
+  const distance = Math.abs(nextCursor - state.cursor);
+  state.cursor = nextCursor;
+  render(previousStep, animate && distance === 1);
+}
+
+async function playTrace() {
+  if (state.playing) {
+    stopPlayback();
+    return;
+  }
+
+  if (state.cursor === maximumCursor()) {
+    setCursor(0, { animate: false });
+  }
+
+  state.playing = true;
+  const token = state.playbackToken + 1;
+  state.playbackToken = token;
+  renderTransport();
+
+  while (state.playing && token === state.playbackToken && state.cursor < maximumCursor()) {
+    setCursor(state.cursor + 1);
+
+    if (state.cursor < maximumCursor()) {
+      await sleep(delayForSpeed());
+    }
+  }
+
+  if (token === state.playbackToken) {
+    state.playing = false;
+    renderTransport();
+  }
+}
+
+function stepBy(amount) {
+  stopPlayback();
+  setCursor(state.cursor + amount);
+}
+
+function restartTrace() {
+  stopPlayback();
+  setCursor(0, { animate: false });
+}
+
+function updateSizeLabel() {
   elements.sizeValue.textContent = elements.size.value;
-});
+}
 
+function updateSpeedLabel() {
+  const speed = Number(elements.speed.value);
+  elements.speedValue.textContent = tempoLabel(speed);
+  elements.speedValue.title = `${delayForSpeed()} milliseconds per trace step`;
+}
+
+function isTypingTarget(target) {
+  return (
+    target instanceof HTMLInputElement ||
+    target instanceof HTMLSelectElement ||
+    target instanceof HTMLTextAreaElement ||
+    target instanceof HTMLButtonElement ||
+    target.isContentEditable
+  );
+}
+
+elements.algorithm.addEventListener("change", () => rebuildTrace());
+elements.dataset.addEventListener("change", generateData);
+elements.size.addEventListener("input", updateSizeLabel);
 elements.size.addEventListener("change", generateData);
-
-elements.speed.addEventListener("input", () => {
-  elements.speedValue.textContent = `${elements.speed.value}%`;
+elements.speed.addEventListener("input", updateSpeedLabel);
+elements.newData.addEventListener("click", generateData);
+elements.restart.addEventListener("click", restartTrace);
+elements.previous.addEventListener("click", () => stepBy(-1));
+elements.next.addEventListener("click", () => stepBy(1));
+elements.play.addEventListener("click", playTrace);
+elements.timeline.addEventListener("input", () => {
+  const requestedCursor = elements.timeline.value;
+  stopPlayback();
+  setCursor(requestedCursor);
 });
 
 document.addEventListener("keydown", (event) => {
-  const interactiveElement = event.target.closest("input, select, button, a");
-
-  if (interactiveElement) {
+  if (isTypingTarget(event.target) || event.metaKey || event.ctrlKey || event.altKey) {
     return;
   }
 
   if (event.code === "Space") {
     event.preventDefault();
-    state.playing ? pause() : play();
+    playTrace();
   } else if (event.code === "ArrowRight") {
     event.preventDefault();
-    stepOnce();
+    stepBy(1);
+  } else if (event.code === "ArrowLeft") {
+    event.preventDefault();
+    stepBy(-1);
   } else if (event.key.toLowerCase() === "r") {
-    prepareRun("Reset to the original data.");
+    restartTrace();
   } else if (event.key.toLowerCase() === "n") {
     generateData();
   }
 });
 
-elements.sizeValue.textContent = elements.size.value;
-elements.speedValue.textContent = `${elements.speed.value}%`;
+updateSizeLabel();
+updateSpeedLabel();
 generateData();

@@ -1,21 +1,21 @@
-# Sorting Lab
+# SortScope
 
-An interactive sorting-algorithm visualizer built with modern, dependency-free JavaScript. It presents every comparison and data movement as a controllable animation, while keeping separate live counts for comparisons, swaps, writes, and total steps.
+SortScope is a teaching-first sorting algorithm visualizer. It keeps the moving values, current pseudocode line, comparison equation, plain-language narration, metrics, and timeline on the same trace so every algorithmic decision can be inspected.
 
 **Live demo:** [ehsanul-karim-pappu.github.io/sorting_algo_visualization](https://ehsanul-karim-pappu.github.io/sorting_algo_visualization/)
 
-## Highlights
+## What makes it useful
 
-- Bubble, Selection, Insertion, and Merge Sort
-- Play, pause, single-step, replay, and reset controls
-- Adjustable animation speed and array size
+- Ten algorithms spanning foundational, divide-and-conquer, heap/gap, and distribution families
+- Values retain their identity and physically move between positions
+- Synchronized pseudocode highlighting and decision narration
+- A comparison tray that shows the exact condition and result
+- Play, pause, forward, backward, restart, replay, and timeline scrubbing
 - Random, nearly sorted, reversed, and duplicate-heavy datasets
-- Correct, separate comparison/swap/write metrics
-- Smooth persistent-bar animation with live operation values and progress
-- Responsive layout for desktop, tablet, and mobile
-- Keyboard shortcuts and accessible status announcements
-- Pure algorithm generators that are independent of rendering
-- Automated tests using Node's built-in test runner
+- Adjustable array size and playback tempo
+- Separate comparison, swap, and write counts
+- Algorithm invariants, complexity, stability, and memory properties
+- Responsive keyboard-accessible interface with reduced-motion support
 - No framework, runtime dependency, bundler, or build step
 
 ## Algorithms
@@ -26,10 +26,28 @@ An interactive sorting-algorithm visualizer built with modern, dependency-free J
 | Selection Sort | `O(n²)` | `O(n²)` | `O(n²)` | `O(1)` | No |
 | Insertion Sort | `O(n)` | `O(n²)` | `O(n²)` | `O(1)` | Yes |
 | Merge Sort | `O(n log n)` | `O(n log n)` | `O(n log n)` | `O(n)` | Yes |
+| Quick Sort | `O(n log n)` | `O(n log n)` | `O(n²)` | `O(log n)` | No |
+| Heap Sort | `O(n log n)` | `O(n log n)` | `O(n log n)` | `O(1)` | No |
+| Shell Sort | `O(n log n)` | `≈ O(n^1.5)` | `O(n²)` | `O(1)` | No |
+| Counting Sort | `O(n + k)` | `O(n + k)` | `O(n + k)` | `O(n + k)` | Yes |
+| Radix Sort | `O(d(n + 10))` | `O(d(n + 10))` | `O(d(n + 10))` | `O(n + 10)` | Yes |
+| Cocktail Shaker Sort | `O(n)` | `O(n²)` | `O(n²)` | `O(1)` | Yes |
+
+## How the trace works
+
+Each run is computed into a series of independent snapshots before playback begins. A snapshot contains:
+
+- the ordered items and their stable identities;
+- the operation type and active pseudocode line;
+- active, candidate, key, sorted, and focused-range markers;
+- the current comparison and its Boolean result;
+- narration and cumulative metrics.
+
+Because playback reads snapshots instead of mutating a live generator, the timeline can move backward, forward, or jump to any point without replaying hidden state. The renderer keys bars by item identity and uses FLIP animation, so the same value visibly travels between positions.
 
 ## Run locally
 
-Because the project uses native JavaScript modules, serve it through a small local HTTP server:
+The project uses native JavaScript modules, so serve it through a local HTTP server:
 
 ```bash
 git clone https://github.com/Ehsanul-Karim-Pappu/sorting_algo_visualization.git
@@ -44,34 +62,37 @@ Then open [http://localhost:8000](http://localhost:8000).
 Node.js 18 or newer is sufficient; no package installation is required.
 
 ```bash
+npm run check
 npm test
 ```
+
+The test suite covers sorting correctness, input immutability, stable ordering, trace coherence, exact representative metrics, dataset generation, DOM/controller contracts, accessibility hooks, and responsive-motion safeguards.
 
 ## Keyboard shortcuts
 
 | Key | Action |
 |---|---|
 | `Space` | Play or pause |
-| `→` | Advance one operation |
-| `R` | Reset the current run |
+| `←` | Previous trace step |
+| `→` | Next trace step |
+| `R` | Restart the current trace |
 | `N` | Generate new data |
 
 ## Project structure
 
 ```text
 .
-├── index.html              # Semantic application shell
-├── styles.css              # Responsive visual design
-├── app.js                  # Playback controller and DOM rendering
-├── algorithms.js           # Pure generator-based algorithms
-├── package.json            # Test command and module configuration
-├── .github/workflows/      # Automated test workflow
+├── index.html              # Semantic teaching interface
+├── styles.css              # Responsive visual system and motion
+├── app.js                  # Timeline, playback, and keyed DOM renderer
+├── algorithms.js           # Pure trace builders and dataset presets
+├── package.json            # Syntax and test commands
+├── .github/workflows/      # Pull-request CI
 └── tests/
-    └── algorithms.test.js  # Correctness and metric tests
+    ├── algorithms.test.js  # Correctness, trace, stability, and metrics
+    └── ui.test.js          # Static controller and accessibility contracts
 ```
 
-## Design notes
+## Design direction
 
-Each algorithm is implemented as a JavaScript generator. A generator yields an immutable snapshot for every meaningful operation, allowing the interface to pause, resume, or advance exactly one step without maintaining separate, algorithm-specific animation flags.
-
-The original version of this project was created in 2020 with p5.js. The current version keeps the educational goal while replacing the rendering dependency and global state with browser-native APIs and testable modules.
+The interface combines a lab notebook with an instrument panel: warm, readable controls surround a dark execution stage. Color is semantic rather than decorative—cyan compares, coral moves, amber marks candidates, and green marks final values—while the selected algorithm supplies the accent used by its code trace and controls.
