@@ -465,8 +465,9 @@ elements.previous.addEventListener("click", () => stepBy(-1));
 elements.next.addEventListener("click", () => stepBy(1));
 elements.play.addEventListener("click", playTrace);
 elements.timeline.addEventListener("input", () => {
+  const requestedCursor = elements.timeline.value;
   stopPlayback();
-  setCursor(elements.timeline.value);
+  setCursor(requestedCursor);
 });
 
 document.addEventListener("keydown", (event) => {

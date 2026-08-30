@@ -56,6 +56,10 @@ test("the page ships the complete learning and playback surfaces", async () => {
   }
 
   assert.match(app, /setCursor\(state\.cursor -?\+ amount\)/);
+  assert.match(
+    app,
+    /const requestedCursor = elements\.timeline\.value;\s+stopPlayback\(\);\s+setCursor\(requestedCursor\);/,
+  );
   assert.match(app, /node\.animate\(/);
   assert.match(styles, /@media \(prefers-reduced-motion: reduce\)/);
   assert.match(styles, /@media \(max-width: 660px\)/);
