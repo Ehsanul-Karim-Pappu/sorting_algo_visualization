@@ -89,12 +89,38 @@
           <div class="visual-heading">
             <div>
               <p class="section-kicker">Live trace</p>
-              <h2 id="visual-title">Array state</h2>
+              <div class="title-with-count">
+                <h2 id="visual-title">Array state</h2>
+                <span id="item-count" class="count-chip">36 values</span>
+              </div>
             </div>
-            <p id="status" class="status" data-state="ready" aria-live="polite">Ready to visualize.</p>
+            <div class="live-operation">
+              <span class="live-orb" aria-hidden="true"></span>
+              <div class="operation-copy">
+                <span id="operation-label" class="operation-label">Ready</span>
+                <p id="status" class="status" data-state="ready" aria-live="polite">Ready to visualize.</p>
+              </div>
+              <output id="active-values" class="active-values" aria-label="Active values">—</output>
+            </div>
           </div>
 
           <div id="bars" class="bars" role="img" aria-label="Sorting visualization"></div>
+
+          <div class="progress-row">
+            <span>Run progress</span>
+            <div
+              id="progress"
+              class="progress-track"
+              role="progressbar"
+              aria-label="Sorting progress"
+              aria-valuemin="0"
+              aria-valuemax="100"
+              aria-valuenow="0"
+            >
+              <span id="progress-fill" class="progress-fill"></span>
+            </div>
+            <output id="progress-value">0%</output>
+          </div>
 
           <div class="legend" aria-label="Visualization legend">
             <span><i class="legend-swatch default" aria-hidden="true"></i>Unvisited</span>

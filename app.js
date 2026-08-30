@@ -14,6 +14,12 @@ const elements = {
   reset: document.querySelector("#reset"),
   bars: document.querySelector("#bars"),
   status: document.querySelector("#status"),
+  operationLabel: document.querySelector("#operation-label"),
+  activeValues: document.querySelector("#active-values"),
+  progress: document.querySelector("#progress"),
+  progressFill: document.querySelector("#progress-fill"),
+  progressValue: document.querySelector("#progress-value"),
+  itemCount: document.querySelector("#item-count"),
   comparisons: document.querySelector("#comparisons"),
   swaps: document.querySelector("#swaps"),
   writes: document.querySelector("#writes"),
@@ -42,7 +48,18 @@ const state = {
   playing: false,
   completed: false,
   runToken: 0,
+  totalSteps: 0,
 };
+
+const OPERATION_LABELS = Object.freeze({
+  idle: "Ready",
+  compare: "Comparing",
+  swap: "Swapping",
+  write: "Writing",
+  insert: "Inserting",
+  range: "Range merged",
+  done: "Complete",
+});
 
 function shuffle(values) {
   const result = [...values];
@@ -100,11 +117,22 @@ function stopPlayback() {
   updateButtons();
 }
 
+function countTotalSteps() {
+  let finalStep = null;
+
+  for (const step of createAlgorithm(elements.algorithm.value, state.source)) {
+    finalStep = step;
+  }
+
+  return finalStep?.stats.steps ?? 0;
+}
+
 function prepareRun(message = "Ready to visualize.") {
   stopPlayback();
   state.iterator = createAlgorithm(elements.algorithm.value, state.source);
   state.currentStep = idleStep(state.source, message);
   state.completed = false;
+  state.totalSteps = countTotalSteps();
   render();
 }
 
@@ -207,6 +235,7 @@ function stepOnce() {
 
 function updateAlgorithmDetails() {
   const details = ALGORITHMS[elements.algorithm.value];
+  document.body.dataset.algorithm = elements.algorithm.value;
   elements.algorithmName.textContent = details.name;
   elements.algorithmDescription.textContent = details.description;
   elements.bestComplexity.textContent = details.best;
@@ -229,39 +258,82 @@ function barState(index, step, active, sorted) {
   return "default";
 }
 
+function ensureBarNodes(count) {
+  if (elements.bars.children.length === count) {
+    return Array.from(elements.bars.children);
+  }
+
+  const fragment = document.createDocumentFragment();
+
+  for (let index = 0; index < count; index += 1) {
+    const bar = document.createElement("div");
+    const label = document.createElement("span");
+    bar.className = "bar";
+    bar.style.setProperty("--bar-index", index);
+    bar.setAttribute("aria-hidden", "true");
+    label.className = "bar-value";
+    bar.append(label);
+    fragment.append(bar);
+  }
+
+  elements.bars.replaceChildren(fragment);
+  return Array.from(elements.bars.children);
+}
+
 function renderBars(step) {
   const maximum = Math.max(...step.values, 1);
   const active = new Set(step.active);
   const sorted = new Set(step.sorted);
   const showValues = step.values.length <= 24;
-  const fragment = document.createDocumentFragment();
+  const bars = ensureBarNodes(step.values.length);
+  const firstActive = step.active[0];
+  const focusPosition = Number.isInteger(firstActive)
+    ? ((firstActive + 0.5) / Math.max(step.values.length, 1)) * 100
+    : 50;
 
   elements.bars.style.setProperty("--bar-gap", step.values.length > 55 ? "2px" : "clamp(3px, 0.45vw, 7px)");
+  elements.bars.style.setProperty("--step-duration", `${Math.min(360, Math.max(55, delayForSpeed() * 0.72))}ms`);
+  elements.bars.style.setProperty("--focus-x", `${focusPosition}%`);
+  elements.bars.style.setProperty("--focus-opacity", step.active.length > 0 ? "1" : "0");
+  elements.bars.dataset.operation = step.type;
+  elements.bars.dataset.labels = showValues ? "show" : "hide";
 
   step.values.forEach((value, index) => {
-    const bar = document.createElement("div");
+    const bar = bars[index];
     const currentState = barState(index, step, active, sorted);
-    bar.className = "bar";
     bar.dataset.state = currentState;
     bar.style.height = `${Math.max(3, (value / maximum) * 100)}%`;
     bar.title = `Position ${index + 1}: ${value}`;
-    bar.setAttribute("aria-hidden", "true");
-
-    if (showValues) {
-      const label = document.createElement("span");
-      label.className = "bar-value";
-      label.textContent = String(value);
-      bar.append(label);
-    }
-
-    fragment.append(bar);
+    bar.children[0].textContent = String(value);
   });
 
-  elements.bars.replaceChildren(fragment);
   elements.bars.setAttribute(
     "aria-label",
     `${ALGORITHMS[elements.algorithm.value].name} visualization with ${step.values.length} values. ${step.message}`,
   );
+}
+
+function renderProgress(step) {
+  const percentage = state.completed
+    ? 100
+    : state.totalSteps > 0
+      ? Math.min(100, (step.stats.steps / state.totalSteps) * 100)
+      : 0;
+
+  elements.progressFill.style.width = `${percentage}%`;
+  const roundedPercentage = Math.round(percentage);
+  elements.progressValue.textContent = percentage > 0 && roundedPercentage === 0 ? "<1%" : `${roundedPercentage}%`;
+  elements.progress.setAttribute("aria-valuenow", String(roundedPercentage));
+}
+
+function renderOperation(step) {
+  const values = step.active
+    .map((index) => step.values[index])
+    .filter((value) => value !== undefined);
+
+  elements.operationLabel.textContent = OPERATION_LABELS[step.type] ?? "Working";
+  elements.activeValues.textContent = values.length > 0 ? values.join(" · ") : "—";
+  elements.itemCount.textContent = `${step.values.length} values`;
 }
 
 function updateButtons() {
@@ -274,10 +346,12 @@ function updateButtons() {
 function render() {
   const step = state.currentStep ?? idleStep(state.source);
   renderBars(step);
+  renderProgress(step);
+  renderOperation(step);
   updateAlgorithmDetails();
 
   elements.status.textContent = step.message;
-  elements.status.dataset.state = state.completed ? "complete" : state.playing ? "running" : "ready";
+  elements.status.dataset.state = state.completed ? "complete" : step.type === "idle" ? "ready" : "running";
   elements.comparisons.textContent = step.stats.comparisons.toLocaleString();
   elements.swaps.textContent = step.stats.swaps.toLocaleString();
   elements.writes.textContent = step.stats.writes.toLocaleString();

@@ -11,6 +11,7 @@ An interactive sorting-algorithm visualizer built with modern, dependency-free J
 - Adjustable animation speed and array size
 - Random, nearly sorted, reversed, and duplicate-heavy datasets
 - Correct, separate comparison/swap/write metrics
+- Smooth persistent-bar animation with live operation values and progress
 - Responsive layout for desktop, tablet, and mobile
 - Keyboard shortcuts and accessible status announcements
 - Pure algorithm generators that are independent of rendering
