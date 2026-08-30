@@ -5,166 +5,266 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="An interactive, accessible visualization of bubble, selection, insertion, and merge sort."
+      content="SortScope is an interactive sorting algorithm theater with synchronized movement, pseudocode, narration, metrics, and a reversible timeline."
     />
-    <meta name="theme-color" content="#07111f" />
-    <title>Sorting Lab — Algorithm Visualizer</title>
+    <meta name="theme-color" content="#10131b" />
+    <title>SortScope — See Every Sorting Decision</title>
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <main class="app-shell">
-      <header class="hero">
-        <div>
-          <p class="eyebrow">Interactive computer science</p>
-          <h1>Sorting Lab</h1>
-          <p class="hero-copy">
-            Watch four classic sorting algorithms work, one operation at a time. Compare their behavior,
-            complexity, and data movement on the same input.
-          </p>
-        </div>
+    <a class="skip-link" href="#stage-title">Skip to the visualization</a>
+
+    <div class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="./" aria-label="SortScope home">
+          <span class="brand-mark" aria-hidden="true">
+            <i></i><i></i><i></i><i></i>
+          </span>
+          <span class="brand-copy">
+            <strong>SortScope</strong>
+            <small>algorithm theater</small>
+          </span>
+        </a>
+
+        <p class="topbar-thesis">Follow every decision, not just the result.</p>
+
         <a
           class="source-link"
           href="https://github.com/Ehsanul-Karim-Pappu/sorting_algo_visualization"
           target="_blank"
           rel="noreferrer"
         >
-          View source <span aria-hidden="true">↗</span>
+          <span>Source</span>
+          <span aria-hidden="true">↗</span>
         </a>
       </header>
 
-      <section class="panel controls" aria-labelledby="controls-title">
-        <div class="section-heading">
-          <div>
-            <p class="section-kicker">Experiment</p>
-            <h2 id="controls-title">Choose the conditions</h2>
-          </div>
-          <p class="keyboard-hint">
-            Shortcuts: <kbd>Space</kbd> play/pause · <kbd>→</kbd> step · <kbd>R</kbd> reset · <kbd>N</kbd> new
-          </p>
-        </div>
-
-        <div class="control-grid">
-          <label class="field" for="algorithm">
-            <span>Algorithm</span>
-            <select id="algorithm">
-              <option value="bubble">Bubble Sort</option>
-              <option value="selection">Selection Sort</option>
-              <option value="insertion">Insertion Sort</option>
-              <option value="merge">Merge Sort</option>
-            </select>
-          </label>
-
-          <label class="field" for="dataset">
-            <span>Starting data</span>
-            <select id="dataset">
-              <option value="random">Random</option>
-              <option value="nearly-sorted">Nearly sorted</option>
-              <option value="reversed">Reversed</option>
-              <option value="few-unique">Few unique values</option>
-            </select>
-          </label>
-
-          <label class="field range-field" for="size">
-            <span>Array size <output id="size-value" for="size">36</output></span>
-            <input id="size" type="range" min="8" max="80" value="36" step="1" />
-          </label>
-
-          <label class="field range-field" for="speed">
-            <span>Speed <output id="speed-value" for="speed">72%</output></span>
-            <input id="speed" type="range" min="1" max="100" value="72" step="1" />
-          </label>
-        </div>
-
-        <div class="action-row" aria-label="Playback controls">
-          <button id="new-data" class="button button-secondary" type="button">New data</button>
-          <button id="play" class="button button-primary" type="button">Play</button>
-          <button id="pause" class="button button-secondary" type="button">Pause</button>
-          <button id="step" class="button button-secondary" type="button">Step</button>
-          <button id="reset" class="button button-quiet" type="button">Reset</button>
-        </div>
-      </section>
-
-      <div class="workspace">
-        <section class="panel visual-panel" aria-labelledby="visual-title">
-          <div class="visual-heading">
+      <main>
+        <section class="control-deck" aria-labelledby="experiment-title">
+          <div class="deck-heading">
+            <span class="deck-index">Experiment</span>
             <div>
-              <p class="section-kicker">Live trace</p>
-              <div class="title-with-count">
-                <h2 id="visual-title">Array state</h2>
-                <span id="item-count" class="count-chip">36 values</span>
-              </div>
-            </div>
-            <div class="live-operation">
-              <span class="live-orb" aria-hidden="true"></span>
-              <div class="operation-copy">
-                <span id="operation-label" class="operation-label">Ready</span>
-                <p id="status" class="status" data-state="ready" aria-live="polite">Ready to visualize.</p>
-              </div>
-              <output id="active-values" class="active-values" aria-label="Active values">—</output>
+              <h1 id="experiment-title">Set the scene</h1>
+              <p>Choose an algorithm and starting shape, then inspect its complete trace.</p>
             </div>
           </div>
 
-          <div id="bars" class="bars" role="img" aria-label="Sorting visualization"></div>
+          <div class="control-fields">
+            <label class="field" for="algorithm">
+              <span>Algorithm</span>
+              <select id="algorithm">
+                <option value="bubble">Bubble Sort</option>
+                <option value="selection">Selection Sort</option>
+                <option value="insertion">Insertion Sort</option>
+                <option value="merge">Merge Sort</option>
+              </select>
+            </label>
 
-          <div class="progress-row">
-            <span>Run progress</span>
-            <div
-              id="progress"
-              class="progress-track"
-              role="progressbar"
-              aria-label="Sorting progress"
-              aria-valuemin="0"
-              aria-valuemax="100"
-              aria-valuenow="0"
-            >
-              <span id="progress-fill" class="progress-fill"></span>
-            </div>
-            <output id="progress-value">0%</output>
-          </div>
+            <label class="field" for="dataset">
+              <span>Starting shape</span>
+              <select id="dataset">
+                <option value="random">Random</option>
+                <option value="nearly-sorted">Nearly sorted</option>
+                <option value="reversed">Reversed</option>
+                <option value="few-unique">Few unique values</option>
+              </select>
+            </label>
 
-          <div class="legend" aria-label="Visualization legend">
-            <span><i class="legend-swatch default" aria-hidden="true"></i>Unvisited</span>
-            <span><i class="legend-swatch compare" aria-hidden="true"></i>Comparing</span>
-            <span><i class="legend-swatch change" aria-hidden="true"></i>Moving</span>
-            <span><i class="legend-swatch sorted" aria-hidden="true"></i>Sorted</span>
+            <label class="field range-field" for="size">
+              <span>
+                Values
+                <output id="size-value" for="size">16</output>
+              </span>
+              <input id="size" type="range" min="6" max="36" value="16" step="1" />
+            </label>
+
+            <label class="field range-field" for="speed">
+              <span>
+                Tempo
+                <output id="speed-value" for="speed">Steady</output>
+              </span>
+              <input id="speed" type="range" min="1" max="100" value="48" step="1" />
+            </label>
+
+            <button id="new-data" class="new-data-button" type="button">
+              <span class="button-spark" aria-hidden="true">✦</span>
+              New data
+            </button>
           </div>
         </section>
 
-        <aside class="insights" aria-label="Algorithm details and metrics">
-          <section class="panel algorithm-card">
-            <p class="section-kicker">Current algorithm</p>
-            <h2 id="algorithm-name">Bubble Sort</h2>
+        <div class="workspace">
+          <aside class="panel code-panel" aria-labelledby="code-title">
+            <header class="panel-heading">
+              <div>
+                <p class="panel-kicker">01 / Code trace</p>
+                <h2 id="code-title">Pseudocode</h2>
+              </div>
+              <span id="code-algorithm" class="outline-chip">Bubble</span>
+            </header>
+
+            <ol id="pseudocode" class="pseudocode" aria-label="Algorithm pseudocode"></ol>
+
+            <div class="invariant-card">
+              <span>Invariant</span>
+              <p id="invariant"></p>
+            </div>
+          </aside>
+
+          <section class="theater" aria-labelledby="stage-title">
+            <header class="theater-heading">
+              <div>
+                <p class="panel-kicker">02 / Live execution</p>
+                <h2 id="stage-title">Bubble Sort</h2>
+              </div>
+              <div class="trace-position" aria-label="Current trace position">
+                <span>Trace</span>
+                <output id="trace-position">0 / 0</output>
+              </div>
+            </header>
+
+            <div class="stage-shell">
+              <div class="stage-status">
+                <div class="operation-state">
+                  <span class="status-orb" aria-hidden="true"></span>
+                  <div>
+                    <span>Current operation</span>
+                    <strong id="operation-label">Ready</strong>
+                  </div>
+                </div>
+                <output id="range-readout">16 values</output>
+              </div>
+
+              <div id="inspection" class="inspection" data-active="false">
+                <p id="inspection-note">Compared values will appear here.</p>
+                <div class="inspection-equation" aria-label="Current comparison">
+                  <div class="operand">
+                    <span id="left-label">left</span>
+                    <strong id="left-value">—</strong>
+                  </div>
+                  <span id="operator" class="operator">?</span>
+                  <div class="operand">
+                    <span id="right-label">right</span>
+                    <strong id="right-value">—</strong>
+                  </div>
+                  <div id="comparison-result" class="comparison-result">Waiting</div>
+                </div>
+              </div>
+
+              <div
+                id="bars"
+                class="bars"
+                role="img"
+                aria-label="Sorting visualization ready"
+              ></div>
+
+              <div class="stage-legend" aria-label="Visualization legend">
+                <span><i class="legend-dot compare"></i>Compare</span>
+                <span><i class="legend-dot moving"></i>Move</span>
+                <span><i class="legend-dot candidate"></i>Candidate</span>
+                <span><i class="legend-dot sorted"></i>Sorted</span>
+              </div>
+            </div>
+
+            <div class="narration">
+              <span id="narration-index" class="narration-index">00</span>
+              <div>
+                <p id="step-title" class="step-title">Ready to explore</p>
+                <p id="status" class="status-copy" aria-live="polite">
+                  Choose Play or move through the trace one step at a time.
+                </p>
+                <p id="step-detail" class="step-detail"></p>
+              </div>
+            </div>
+
+            <div class="transport" aria-label="Trace playback controls">
+              <div class="transport-buttons">
+                <button id="restart" class="icon-button" type="button" aria-label="Restart trace" title="Restart (R)">
+                  <span aria-hidden="true">↺</span>
+                </button>
+                <button id="previous" class="icon-button" type="button" aria-label="Previous step" title="Previous step (Left arrow)">
+                  <span aria-hidden="true">←</span>
+                </button>
+                <button id="play" class="play-button" type="button">
+                  <span id="play-icon" aria-hidden="true">▶</span>
+                  <span id="play-label">Play trace</span>
+                </button>
+                <button id="next" class="icon-button" type="button" aria-label="Next step" title="Next step (Right arrow)">
+                  <span aria-hidden="true">→</span>
+                </button>
+              </div>
+
+              <label class="timeline-field" for="timeline">
+                <span class="timeline-label">
+                  <span>Timeline</span>
+                  <output id="timeline-value" for="timeline">0%</output>
+                </span>
+                <input id="timeline" type="range" min="0" max="1" value="0" step="1" />
+              </label>
+            </div>
+
+            <p class="keyboard-hint">
+              <kbd>Space</kbd> play / pause
+              <span>·</span>
+              <kbd>←</kbd><kbd>→</kbd> step
+              <span>·</span>
+              <kbd>R</kbd> restart
+              <span>·</span>
+              <kbd>N</kbd> new data
+            </p>
+          </section>
+
+          <aside class="panel learn-panel" aria-labelledby="learn-title">
+            <header class="panel-heading">
+              <div>
+                <p class="panel-kicker">03 / Learning lens</p>
+                <h2 id="learn-title">What to notice</h2>
+              </div>
+            </header>
+
             <p id="algorithm-description" class="algorithm-description"></p>
 
-            <dl class="complexity-grid">
-              <div><dt>Best</dt><dd id="best-complexity">O(n)</dd></div>
-              <div><dt>Average</dt><dd id="average-complexity">O(n²)</dd></div>
-              <div><dt>Worst</dt><dd id="worst-complexity">O(n²)</dd></div>
-              <div><dt>Space</dt><dd id="space-complexity">O(1)</dd></div>
-              <div><dt>Stable</dt><dd id="stable">Yes</dd></div>
-              <div><dt>In place</dt><dd id="in-place">Yes</dd></div>
+            <dl class="metrics" aria-label="Live operation metrics">
+              <div>
+                <dt>Comparisons</dt>
+                <dd id="comparisons">0</dd>
+              </div>
+              <div>
+                <dt>Swaps</dt>
+                <dd id="swaps">0</dd>
+              </div>
+              <div>
+                <dt>Writes</dt>
+                <dd id="writes">0</dd>
+              </div>
             </dl>
-          </section>
 
-          <section class="panel metrics-card" aria-labelledby="metrics-title">
-            <div>
-              <p class="section-kicker">Measured live</p>
-              <h2 id="metrics-title">Operations</h2>
+            <section class="complexity-card" aria-labelledby="complexity-title">
+              <div class="subheading-row">
+                <h3 id="complexity-title">Complexity</h3>
+                <span id="stability-chip" class="status-chip">Stable</span>
+              </div>
+              <dl class="complexity-list">
+                <div><dt>Best</dt><dd id="best-complexity">O(n)</dd></div>
+                <div><dt>Average</dt><dd id="average-complexity">O(n²)</dd></div>
+                <div><dt>Worst</dt><dd id="worst-complexity">O(n²)</dd></div>
+                <div><dt>Space</dt><dd id="space-complexity">O(1)</dd></div>
+              </dl>
+            </section>
+
+            <div class="property-row">
+              <span id="stable-property">Stable</span>
+              <span id="place-property">In place</span>
             </div>
-            <dl class="metrics-grid">
-              <div><dt>Comparisons</dt><dd id="comparisons">0</dd></div>
-              <div><dt>Swaps</dt><dd id="swaps">0</dd></div>
-              <div><dt>Writes</dt><dd id="writes">0</dd></div>
-              <div><dt>Steps</dt><dd id="steps">0</dd></div>
-            </dl>
-          </section>
-        </aside>
-      </div>
+          </aside>
+        </div>
+      </main>
 
       <footer>
-        Built with modern browser APIs—no framework, build step, or runtime dependency required.
+        <span>SortScope</span>
+        <p>Built with browser-native JavaScript. No framework, build step, or runtime dependency.</p>
       </footer>
-    </main>
+    </div>
 
     <script type="module" src="./app.js"></script>
   </body>
