@@ -1,29 +1,145 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="An interactive, accessible visualization of bubble, selection, insertion, and merge sort."
+    />
+    <meta name="theme-color" content="#07111f" />
+    <title>Sorting Lab — Algorithm Visualizer</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">Interactive computer science</p>
+          <h1>Sorting Lab</h1>
+          <p class="hero-copy">
+            Watch four classic sorting algorithms work, one operation at a time. Compare their behavior,
+            complexity, and data movement on the same input.
+          </p>
+        </div>
+        <a
+          class="source-link"
+          href="https://github.com/Ehsanul-Karim-Pappu/sorting_algo_visualization"
+          target="_blank"
+          rel="noreferrer"
+        >
+          View source <span aria-hidden="true">↗</span>
+        </a>
+      </header>
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- three.js -->
-    <!-- <script src="./library/three.js"></script>
-    <script src="./library/three.min.js"></script>
-    <script src="./library/three.module.js"></script> -->
+      <section class="panel controls" aria-labelledby="controls-title">
+        <div class="section-heading">
+          <div>
+            <p class="section-kicker">Experiment</p>
+            <h2 id="controls-title">Choose the conditions</h2>
+          </div>
+          <p class="keyboard-hint">
+            Shortcuts: <kbd>Space</kbd> play/pause · <kbd>→</kbd> step · <kbd>R</kbd> reset · <kbd>N</kbd> new
+          </p>
+        </div>
 
-    <!-- p5 -->
-    <script src="./library/p5.js"></script>
-    <script src="./library/p5.sound.min.js"></script>
-    <!-- <script src="./library/p5.sound.js"></script> -->
-    <!-- <script src="./library/p5.min.js"></script> -->
+        <div class="control-grid">
+          <label class="field" for="algorithm">
+            <span>Algorithm</span>
+            <select id="algorithm">
+              <option value="bubble">Bubble Sort</option>
+              <option value="selection">Selection Sort</option>
+              <option value="insertion">Insertion Sort</option>
+              <option value="merge">Merge Sort</option>
+            </select>
+          </label>
 
-    <title>Visualizing Sorting Algorithm</title>
-</head>
+          <label class="field" for="dataset">
+            <span>Starting data</span>
+            <select id="dataset">
+              <option value="random">Random</option>
+              <option value="nearly-sorted">Nearly sorted</option>
+              <option value="reversed">Reversed</option>
+              <option value="few-unique">Few unique values</option>
+            </select>
+          </label>
 
-<body>
+          <label class="field range-field" for="size">
+            <span>Array size <output id="size-value" for="size">36</output></span>
+            <input id="size" type="range" min="8" max="80" value="36" step="1" />
+          </label>
 
-    <script src="script.js"></script>
-    <script src="algorithms.js"></script>
-    <script src="mergesort.js"></script>
+          <label class="field range-field" for="speed">
+            <span>Speed <output id="speed-value" for="speed">72%</output></span>
+            <input id="speed" type="range" min="1" max="100" value="72" step="1" />
+          </label>
+        </div>
 
-</body>
+        <div class="action-row" aria-label="Playback controls">
+          <button id="new-data" class="button button-secondary" type="button">New data</button>
+          <button id="play" class="button button-primary" type="button">Play</button>
+          <button id="pause" class="button button-secondary" type="button">Pause</button>
+          <button id="step" class="button button-secondary" type="button">Step</button>
+          <button id="reset" class="button button-quiet" type="button">Reset</button>
+        </div>
+      </section>
 
+      <div class="workspace">
+        <section class="panel visual-panel" aria-labelledby="visual-title">
+          <div class="visual-heading">
+            <div>
+              <p class="section-kicker">Live trace</p>
+              <h2 id="visual-title">Array state</h2>
+            </div>
+            <p id="status" class="status" data-state="ready" aria-live="polite">Ready to visualize.</p>
+          </div>
+
+          <div id="bars" class="bars" role="img" aria-label="Sorting visualization"></div>
+
+          <div class="legend" aria-label="Visualization legend">
+            <span><i class="legend-swatch default" aria-hidden="true"></i>Unvisited</span>
+            <span><i class="legend-swatch compare" aria-hidden="true"></i>Comparing</span>
+            <span><i class="legend-swatch change" aria-hidden="true"></i>Moving</span>
+            <span><i class="legend-swatch sorted" aria-hidden="true"></i>Sorted</span>
+          </div>
+        </section>
+
+        <aside class="insights" aria-label="Algorithm details and metrics">
+          <section class="panel algorithm-card">
+            <p class="section-kicker">Current algorithm</p>
+            <h2 id="algorithm-name">Bubble Sort</h2>
+            <p id="algorithm-description" class="algorithm-description"></p>
+
+            <dl class="complexity-grid">
+              <div><dt>Best</dt><dd id="best-complexity">O(n)</dd></div>
+              <div><dt>Average</dt><dd id="average-complexity">O(n²)</dd></div>
+              <div><dt>Worst</dt><dd id="worst-complexity">O(n²)</dd></div>
+              <div><dt>Space</dt><dd id="space-complexity">O(1)</dd></div>
+              <div><dt>Stable</dt><dd id="stable">Yes</dd></div>
+              <div><dt>In place</dt><dd id="in-place">Yes</dd></div>
+            </dl>
+          </section>
+
+          <section class="panel metrics-card" aria-labelledby="metrics-title">
+            <div>
+              <p class="section-kicker">Measured live</p>
+              <h2 id="metrics-title">Operations</h2>
+            </div>
+            <dl class="metrics-grid">
+              <div><dt>Comparisons</dt><dd id="comparisons">0</dd></div>
+              <div><dt>Swaps</dt><dd id="swaps">0</dd></div>
+              <div><dt>Writes</dt><dd id="writes">0</dd></div>
+              <div><dt>Steps</dt><dd id="steps">0</dd></div>
+            </dl>
+          </section>
+        </aside>
+      </div>
+
+      <footer>
+        Built with modern browser APIs—no framework, build step, or runtime dependency required.
+      </footer>
+    </main>
+
+    <script type="module" src="./app.js"></script>
+  </body>
 </html>

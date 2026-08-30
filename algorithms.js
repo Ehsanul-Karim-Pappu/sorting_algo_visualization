@@ -1,216 +1,328 @@
-/**************************************************************
-********************    Bubble Sort    ************************
-**************************************************************/
+export const ALGORITHMS = Object.freeze({
+  bubble: Object.freeze({
+    name: "Bubble Sort",
+    description:
+      "Repeatedly compares neighboring values and moves the larger value toward the end. This version stops early when a pass makes no swaps.",
+    best: "O(n)",
+    average: "O(n²)",
+    worst: "O(n²)",
+    space: "O(1)",
+    stable: true,
+    inPlace: true,
+  }),
+  selection: Object.freeze({
+    name: "Selection Sort",
+    description:
+      "Finds the smallest remaining value and places it at the next sorted position.",
+    best: "O(n²)",
+    average: "O(n²)",
+    worst: "O(n²)",
+    space: "O(1)",
+    stable: false,
+    inPlace: true,
+  }),
+  insertion: Object.freeze({
+    name: "Insertion Sort",
+    description:
+      "Builds a sorted prefix by shifting larger values right and inserting each new value into its correct position.",
+    best: "O(n)",
+    average: "O(n²)",
+    worst: "O(n²)",
+    space: "O(1)",
+    stable: true,
+    inPlace: true,
+  }),
+  merge: Object.freeze({
+    name: "Merge Sort",
+    description:
+      "Divides the data into smaller ranges, sorts them recursively, and merges those ranges back together.",
+    best: "O(n log n)",
+    average: "O(n log n)",
+    worst: "O(n log n)",
+    space: "O(n)",
+    stable: true,
+    inPlace: false,
+  }),
+});
 
-let bubble = {
-    i : 0,
-    j : 0,
-    flag : false
+function normalizeInput(input) {
+  if (!Array.isArray(input)) {
+    throw new TypeError("The input must be an array.");
+  }
+
+  if (!input.every(Number.isFinite)) {
+    throw new TypeError("Every array value must be a finite number.");
+  }
+
+  return [...input];
 }
 
-function bubble_sort() {
-    bubble.flag = true;
-    iteration++;
-
-    // draw the array element after every swap
-    for (let k = 0; k < array.length; k++) {
-        // if sorted, then fill with green color
-        if (k >= array.length - bubble.j) fill(0, 255, 0);
-        // draw the swapping element with red color
-        else if (k == bubble.i) fill(255, 0, 0);
-        // else fill with white color
-        else fill(255, 255, 255);
-        rect(20 + k * gap, 10, 10, array[k], 3);
-    }
-
-    if (array[bubble.i] > array[bubble.i + 1]) {
-        let temp = null;
-        temp = array[bubble.i];
-        array[bubble.i] = array[bubble.i + 1];
-        array[bubble.i + 1] = temp;
-    }
-    bubble.i++;
-    // condition for inner loop
-    if (bubble.i >= array.length - 1 - bubble.j) {
-        bubble.j++;
-        bubble.i = 0;
-    }
-    // condition for outter loop
-    if (bubble.j > array.length) {
-        bubble.flag = false;
-        noLoop();
-    }
+function createStats() {
+  return {
+    comparisons: 0,
+    swaps: 0,
+    writes: 0,
+    steps: 0,
+  };
 }
 
-
-/****************  halka valo bubble sort  ******************/
-let _bubble = {
-    i : 0,
-    j : 0,
-    flag : false
-}
-let flag = false;
-function bubble_sort_halka_valo() {
-    _bubble.flag = true;
-    iteration++;
-
-    // draw the array element after every swap
-    for (let k = 0; k < array.length; k++) {
-        // if sorted, then fill with green color
-        if (k >= array.length - _bubble.j) fill(0, 255, 0);
-        // draw the swapping element with red color
-        else if (k == _bubble.i) fill(255, 0, 0);
-        // else fill with white color
-        else fill(255, 255, 255);
-        rect(20 + k * gap, 10, 10, array[k], 3);
-    }
-
-    if (array[_bubble.i] > array[_bubble.i + 1]) {
-        let temp = null;
-        temp = array[_bubble.i];
-        array[_bubble.i] = array[_bubble.i + 1];
-        array[_bubble.i + 1] = temp;
-        flag = true;
-    }
-    _bubble.i++;
-    // condition for inner loop
-    if (_bubble.i >= array.length - 1 - _bubble.j) {
-        if (!flag) {
-            _bubble.flag = false;
-            for (let k = 0; k < array.length; k++) {
-                fill(0, 255, 0);
-                rect(20 + k * gap, 10, 10, array[k], 3);
-            }
-            noLoop();
-        }
-        _bubble.j++;
-        flag = false;
-        _bubble.i = 0;
-    }
-    // condition for outter loop
-    if (_bubble.j > array.length) {
-        _bubble.flag = false;
-        noLoop();
-    }
+function range(start, end) {
+  return Array.from({ length: Math.max(0, end - start) }, (_, index) => start + index);
 }
 
-
-
-/**************************************************************
-********************    Selection Sort    *********************
-**************************************************************/
-
-let selection = {
-    i : 0,
-    j : 1,
-    index_min : 0,
-    flag : false
-}
-function selection_sort() {
-    selection.flag = true;
-    iteration++;
-
-    // draw the array element after every swap
-    for (let k = 0; k < array.length; k++) {
-        // draw the current min element with blue color
-        if (k == selection.index_min) fill(0, 0, 255);
-        // draw the sorted element with green color;
-        else if (k < selection.i) fill(0, 255, 0);
-        // draw the current element with red color
-        else if (k == selection.j) fill(255, 0, 0);
-        // else fill with white color
-        else fill(255, 255, 255);
-        rect(20 + k * gap, 10, 10, array[k], 3);
-    }
-
-    if (array[selection.j] < array[selection.index_min]) {
-        selection.index_min = selection.j;
-    }
-    selection.j++;
-    // condition for inner loop
-    if (selection.j >= array.length) {
-        if (selection.index_min != selection.i) {
-            let temp = null;
-            temp = array[selection.i];
-            array[selection.i] = array[selection.index_min];
-            array[selection.index_min] = temp;
-        }
-        selection.i++;
-        selection.j = selection.i + 1;
-        selection.index_min = selection.i;
-    }
-    // condition for outter loop
-    if (selection.i > array.length) {
-        selection.flag = false;
-        noLoop();
-    }
+function snapshot(values, stats, options = {}) {
+  return {
+    values: [...values],
+    stats: { ...stats },
+    type: options.type ?? "idle",
+    active: [...(options.active ?? [])],
+    sorted: [...(options.sorted ?? [])],
+    message: options.message ?? "",
+  };
 }
 
-
-
-/**************************************************************
-*******************     Insertion Sort      ********************
-**************************************************************/
-
-let insertion = {
-    i : 1,
-    j : 0,
-    temp : null,
-    flag : false
+function completedStep(values, stats, algorithmName) {
+  return snapshot(values, stats, {
+    type: "done",
+    sorted: range(0, values.length),
+    message: `${algorithmName} complete.`,
+  });
 }
 
-let t = true;
-function insertion_sort() {
-    insertion.flag = true;
-    iteration++;
+export function* bubbleSort(input) {
+  const values = normalizeInput(input);
+  const stats = createStats();
+  const sorted = new Set();
 
-    if (t) {  //nahole array[1] undefined astechilo..karon insertion.temp global var
-        insertion.temp = array[1];
-        t = false;
-    }
-    // draw the array element after every insertion
-    for (let k = 0; k < array.length; k++) {
-        if (k == insertion.i) {
-            stroke(0);
-            fill(255, 255, 0);
-        }
-        else if (k == insertion.j) {
-            stroke(0);
-            fill(255, 0, 0);
-        }
-        else if (k == insertion.j + 1) {
-            noStroke(0);
-            fill(100);
-        }
-        else if (k < insertion.i) {
-            stroke(0);
-            fill(0, 255, 0);
-        }
-        else {
-            stroke(0);
-            fill(255, 255, 255);
-        }
-        rect(20 + k * gap, 10, 10, array[k], 3);
-    }
+  for (let end = values.length - 1; end > 0; end -= 1) {
+    let swapped = false;
 
-    if (insertion.j >= 0 && array[insertion.j] > insertion.temp) {
-        array[insertion.j + 1] = array[insertion.j];
-        insertion.j--;
-    }
-    else {
-        array[insertion.j + 1] = insertion.temp;
-        insertion.i++;
-        insertion.temp = array[insertion.i];
-        insertion.j = insertion.i - 1;
+    for (let index = 0; index < end; index += 1) {
+      stats.comparisons += 1;
+      stats.steps += 1;
+      yield snapshot(values, stats, {
+        type: "compare",
+        active: [index, index + 1],
+        sorted,
+        message: `Compare positions ${index + 1} and ${index + 2}.`,
+      });
+
+      if (values[index] > values[index + 1]) {
+        [values[index], values[index + 1]] = [values[index + 1], values[index]];
+        stats.swaps += 1;
+        stats.writes += 2;
+        stats.steps += 1;
+        swapped = true;
+
+        yield snapshot(values, stats, {
+          type: "swap",
+          active: [index, index + 1],
+          sorted,
+          message: `Swap positions ${index + 1} and ${index + 2}.`,
+        });
+      }
     }
 
-    if (insertion.i >=   array.length) {
-        insertion.flag = false;
-        for (let k = 0; k < array.length; k++) {
-            stroke(0);
-            fill(0, 255, 0);
-            rect(20 + k * gap, 10, 10, array[k], 3);
-        }
-        noLoop();
+    sorted.add(end);
+
+    if (!swapped) {
+      break;
     }
+  }
+
+  yield completedStep(values, stats, ALGORITHMS.bubble.name);
+}
+
+export function* selectionSort(input) {
+  const values = normalizeInput(input);
+  const stats = createStats();
+  const sorted = new Set();
+
+  for (let index = 0; index < values.length - 1; index += 1) {
+    let minimum = index;
+
+    for (let scan = index + 1; scan < values.length; scan += 1) {
+      stats.comparisons += 1;
+      stats.steps += 1;
+      yield snapshot(values, stats, {
+        type: "compare",
+        active: [minimum, scan],
+        sorted,
+        message: `Compare the current minimum with position ${scan + 1}.`,
+      });
+
+      if (values[scan] < values[minimum]) {
+        minimum = scan;
+      }
+    }
+
+    if (minimum !== index) {
+      [values[index], values[minimum]] = [values[minimum], values[index]];
+      stats.swaps += 1;
+      stats.writes += 2;
+      stats.steps += 1;
+
+      yield snapshot(values, stats, {
+        type: "swap",
+        active: [index, minimum],
+        sorted,
+        message: `Place the minimum value at position ${index + 1}.`,
+      });
+    }
+
+    sorted.add(index);
+  }
+
+  yield completedStep(values, stats, ALGORITHMS.selection.name);
+}
+
+export function* insertionSort(input) {
+  const values = normalizeInput(input);
+  const stats = createStats();
+
+  for (let index = 1; index < values.length; index += 1) {
+    const key = values[index];
+    let scan = index - 1;
+
+    while (scan >= 0) {
+      stats.comparisons += 1;
+      stats.steps += 1;
+      yield snapshot(values, stats, {
+        type: "compare",
+        active: [scan, scan + 1],
+        sorted: range(0, index),
+        message: `Compare ${key} with the value at position ${scan + 1}.`,
+      });
+
+      if (values[scan] <= key) {
+        break;
+      }
+
+      values[scan + 1] = values[scan];
+      stats.writes += 1;
+      stats.steps += 1;
+
+      yield snapshot(values, stats, {
+        type: "write",
+        active: [scan, scan + 1],
+        sorted: range(0, index),
+        message: `Shift ${values[scan]} one position to the right.`,
+      });
+
+      scan -= 1;
+    }
+
+    values[scan + 1] = key;
+    stats.writes += 1;
+    stats.steps += 1;
+
+    yield snapshot(values, stats, {
+      type: "insert",
+      active: [scan + 1],
+      sorted: range(0, index + 1),
+      message: `Insert ${key} at position ${scan + 2}.`,
+    });
+  }
+
+  yield completedStep(values, stats, ALGORITHMS.insertion.name);
+}
+
+export function* mergeSort(input) {
+  const values = normalizeInput(input);
+  const stats = createStats();
+
+  function* sortRange(start, end) {
+    if (end - start <= 1) {
+      return;
+    }
+
+    const middle = start + Math.floor((end - start) / 2);
+    yield* sortRange(start, middle);
+    yield* sortRange(middle, end);
+
+    const left = values.slice(start, middle);
+    const right = values.slice(middle, end);
+    let leftIndex = 0;
+    let rightIndex = 0;
+    let writeIndex = start;
+
+    while (leftIndex < left.length && rightIndex < right.length) {
+      stats.comparisons += 1;
+      stats.steps += 1;
+      yield snapshot(values, stats, {
+        type: "compare",
+        active: [writeIndex],
+        message: `Compare ${left[leftIndex]} and ${right[rightIndex]}.`,
+      });
+
+      if (left[leftIndex] <= right[rightIndex]) {
+        values[writeIndex] = left[leftIndex];
+        leftIndex += 1;
+      } else {
+        values[writeIndex] = right[rightIndex];
+        rightIndex += 1;
+      }
+
+      stats.writes += 1;
+      stats.steps += 1;
+      yield snapshot(values, stats, {
+        type: "write",
+        active: [writeIndex],
+        message: `Write the next value at position ${writeIndex + 1}.`,
+      });
+      writeIndex += 1;
+    }
+
+    while (leftIndex < left.length) {
+      values[writeIndex] = left[leftIndex];
+      leftIndex += 1;
+      stats.writes += 1;
+      stats.steps += 1;
+      yield snapshot(values, stats, {
+        type: "write",
+        active: [writeIndex],
+        message: `Copy the remaining left-side value to position ${writeIndex + 1}.`,
+      });
+      writeIndex += 1;
+    }
+
+    while (rightIndex < right.length) {
+      values[writeIndex] = right[rightIndex];
+      rightIndex += 1;
+      stats.writes += 1;
+      stats.steps += 1;
+      yield snapshot(values, stats, {
+        type: "write",
+        active: [writeIndex],
+        message: `Copy the remaining right-side value to position ${writeIndex + 1}.`,
+      });
+      writeIndex += 1;
+    }
+
+    yield snapshot(values, stats, {
+      type: "range",
+      active: range(start, end),
+      message: `Merged positions ${start + 1}–${end}.`,
+    });
+  }
+
+  yield* sortRange(0, values.length);
+  yield completedStep(values, stats, ALGORITHMS.merge.name);
+}
+
+const IMPLEMENTATIONS = Object.freeze({
+  bubble: bubbleSort,
+  selection: selectionSort,
+  insertion: insertionSort,
+  merge: mergeSort,
+});
+
+export function createAlgorithm(algorithmId, input) {
+  const implementation = IMPLEMENTATIONS[algorithmId];
+
+  if (!implementation) {
+    throw new RangeError(`Unknown algorithm: ${algorithmId}`);
+  }
+
+  return implementation(input);
 }
