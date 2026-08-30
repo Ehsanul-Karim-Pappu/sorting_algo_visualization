@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   ALGORITHMS,
+  applyTraceDetail,
   createAlgorithm,
   createDataset,
   createTrace,
@@ -122,6 +123,31 @@ test("quick and heap traces expose their defining operations", () => {
   assert.equal(quickTypes.has("partition"), true);
   assert.equal(heapTypes.has("heap"), true);
   assert.equal(heapTypes.has("extract"), true);
+});
+
+test("structural algorithms expose native visualization state", () => {
+  for (const algorithmId of ["merge", "quick", "heap", "shell", "counting", "radix"]) {
+    const trace = createTrace(algorithmId, [9, 3, 7, 1, 5, 3]);
+    const structuralSteps = trace.steps.filter((step) => step.visual?.kind === algorithmId);
+    assert.equal(structuralSteps.length > 0, true, `${algorithmId} should expose native state`);
+    assert.equal(structuralSteps.every((step) => step.visual.kind === algorithmId), true);
+  }
+});
+
+test("trace detail modes preserve the complete result while reducing navigation", () => {
+  const full = createTrace("heap", [9, 3, 7, 1, 8, 2, 6, 4, 5]);
+  const decisions = applyTraceDetail(full, "decisions");
+  const milestones = applyTraceDetail(full, "milestones");
+
+  assert.equal(decisions.steps.length < full.steps.length, true);
+  assert.equal(milestones.steps.length < decisions.steps.length, true);
+  for (const trace of [decisions, milestones]) {
+    assert.deepEqual(trace.steps.at(-1).values, full.result);
+    assert.equal(trace.steps[0].type, "idle");
+    assert.equal(trace.steps.at(-1).type, "done");
+    assert.equal(trace.originalStepCount, full.steps.length);
+  }
+  assert.throws(() => applyTraceDetail(full, "unknown"), /Unknown trace detail mode/);
 });
 
 test("integer distribution sorts reject unsupported numeric inputs", () => {

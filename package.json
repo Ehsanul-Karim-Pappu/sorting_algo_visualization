@@ -1,11 +1,17 @@
 {
   "name": "sortscope",
-  "version": "3.0.0",
+  "version": "4.0.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test",
-    "check": "node --check app.js && node --check algorithms.js"
+    "test": "node --test tests/*.test.js",
+    "check": "node --check app.js && node --check algorithms.js && node --check algorithms/*.js",
+    "test:visual": "playwright test",
+    "test:visual:update": "playwright test --update-snapshots",
+    "dev": "node tests/server.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.62.1"
   },
   "engines": {
     "node": ">=18"
