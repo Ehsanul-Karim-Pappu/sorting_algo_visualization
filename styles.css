@@ -282,6 +282,11 @@ select {
   font-weight: 680;
 }
 
+#detail {
+  padding-right: 27px;
+  font-size: 0.74rem;
+}
+
 .number-input,
 #custom-data {
   width: 100%;

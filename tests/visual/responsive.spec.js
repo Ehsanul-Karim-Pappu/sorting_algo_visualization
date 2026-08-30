@@ -76,3 +76,32 @@ test("comparison and native structures render together", async ({ page }, testIn
   });
   expect(screenshot.byteLength).toBeGreaterThan(5_000);
 });
+
+test("custom data, compact traces, share state, and Focus Mode work together", async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/?algorithm=quick&dataset=random&detail=all&seed=12&size=12");
+  const fullMaximum = Number(await page.locator("#timeline").getAttribute("max"));
+
+  await page.locator("#dataset").selectOption("custom");
+  await page.locator("#custom-data").fill("9, -2, 9, 4, 1");
+  await page.getByRole("button", { name: "Apply array" }).click();
+  await expect(page.locator("#bars .bar-item")).toHaveCount(5);
+  await expect(page).toHaveURL(/dataset=custom.*values=9%2C-2%2C9%2C4%2C1/);
+
+  await page.locator("#detail").selectOption("milestones");
+  const compactMaximum = Number(await page.locator("#timeline").getAttribute("max"));
+  expect(compactMaximum).toBeLessThan(fullMaximum);
+
+  await page.getByRole("button", { name: "Focus" }).click();
+  await expect(page.locator("body")).toHaveAttribute("data-focus-mode", "true");
+  await expect(page.locator(".topbar")).toBeHidden();
+  const transportPosition = await page.locator(".transport").evaluate((node) => getComputedStyle(node).position);
+  expect(transportPosition).toBe("sticky");
+
+  const screenshot = await page.locator(".theater").screenshot({
+    path: testInfo.outputPath("phone-focus-mode.png"),
+    animations: "disabled",
+    caret: "hide",
+  });
+  expect(screenshot.byteLength).toBeGreaterThan(5_000);
+});

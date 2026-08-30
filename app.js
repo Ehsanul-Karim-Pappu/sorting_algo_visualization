@@ -227,6 +227,7 @@ function syncUrl() {
   params.set("detail", elements.detail.value);
   params.set("seed", String(normalizedSeed()));
   params.set("size", elements.dataset.value === "custom" ? String(state.source.length) : elements.size.value);
+  params.set("speed", elements.speed.value);
 
   if (state.compareEnabled) {
     params.set("compare", elements.compareAlgorithm.value);
@@ -247,6 +248,7 @@ function restoreUrlState() {
   const compare = params.get("compare");
   const size = Number(params.get("size"));
   const seed = Number(params.get("seed"));
+  const speed = Number(params.get("speed"));
 
   if (algorithm && ALGORITHMS[algorithm]) elements.algorithm.value = algorithm;
   if (dataset && DATASET_TYPES.has(dataset)) elements.dataset.value = dataset;
@@ -256,6 +258,9 @@ function restoreUrlState() {
   }
   if (params.has("seed") && Number.isSafeInteger(seed) && seed >= 0 && seed <= 2147483647) {
     elements.seed.value = String(seed);
+  }
+  if (params.has("speed") && Number.isInteger(speed) && speed >= 1 && speed <= 100) {
+    elements.speed.value = String(speed);
   }
   if (compare && ALGORITHMS[compare]) elements.compareAlgorithm.value = compare;
   if (params.has("values")) elements.customData.value = params.get("values");
@@ -993,7 +998,10 @@ elements.size.addEventListener("input", updateSizeLabel);
 elements.size.addEventListener("change", () => {
   if (elements.dataset.value !== "custom") generateData();
 });
-elements.speed.addEventListener("input", updateSpeedLabel);
+elements.speed.addEventListener("input", () => {
+  updateSpeedLabel();
+  syncUrl();
+});
 elements.detail.addEventListener("change", () => rebuildTraces());
 elements.seed.addEventListener("input", () => {
   if (elements.dataset.value !== "custom") generateData();
@@ -1008,8 +1016,11 @@ elements.compareToggle.addEventListener("click", () => {
   syncUrl();
 });
 elements.compareAlgorithm.addEventListener("change", () => {
+  const previousAlgorithm = state.compareTrace?.algorithmId;
   normalizeComparisonChoice();
-  rebuildTraces();
+  if (!rebuildTraces() && previousAlgorithm) {
+    elements.compareAlgorithm.value = previousAlgorithm;
+  }
 });
 elements.shareLink.addEventListener("click", copyShareLink);
 elements.focusMode.addEventListener("click", () => setFocusMode(!state.focusMode));
