@@ -47,7 +47,7 @@ test("mobile operation and narration panels keep stable heights", async ({ page 
   }));
 
   for (let count = 0; count < 8; count += 1) {
-    await page.getByRole("button", { name: "Next step" }).click();
+    await page.getByRole("button", { name: "Next step", exact: true }).click();
   }
 
   const active = await page.evaluate(() => ({
@@ -67,7 +67,7 @@ test("comparison and native structures render together", async ({ page }, testIn
   await expect(page.locator(".heap-tree")).toBeVisible();
   await expect(page.locator("#compare-native-visual .radix-buckets")).toBeVisible();
 
-  await page.getByRole("button", { name: "Next step" }).click();
+  await page.getByRole("button", { name: "Next step", exact: true }).click();
   await expect(page.locator("#compare-trace-position")).not.toHaveText("0 / 0");
   const screenshot = await page.locator("#stage-grid").screenshot({
     path: testInfo.outputPath("desktop-comparison.png"),

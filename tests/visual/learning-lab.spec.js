@@ -4,7 +4,7 @@ test("fair race uses primitive work instead of normalized progress", async ({ pa
   await page.goto("/?algorithm=bubble&compare=merge&clock=race&dataset=reversed&detail=all&seed=5&size=8");
   await expect(page.locator("#stage-grid")).toHaveAttribute("data-compare", "true");
   await expect(page.locator("#compare-mode")).toHaveValue("race");
-  await page.getByRole("button", { name: "Next step" }).click();
+  await page.getByRole("button", { name: "Next step", exact: true }).click();
   await expect(page.locator("#race-status")).toContainText("operation ticks");
   await expect(page.locator("#trace-position")).toContainText("clock 1/");
 
@@ -20,7 +20,7 @@ test("prediction mode pauses before a decision and scores the answer", async ({ 
 
   for (let count = 0; count < 8; count += 1) {
     if (await page.locator("#prediction-card").isVisible()) break;
-    await page.getByRole("button", { name: "Next step" }).click();
+    await page.getByRole("button", { name: "Next step", exact: true }).click();
   }
   await expect(page.locator("#prediction-card")).toBeVisible();
   await expect(page.locator("#prediction-question")).toContainText("evaluate to Yes");
@@ -54,7 +54,7 @@ test("real code, variables, and saved lesson progress stay synchronized", async 
   await page.locator("#code-language").selectOption("python");
   await expect(page.locator("#code-title")).toHaveText("Python");
   await expect(page.locator("#pseudocode code").first()).toContainText("mid");
-  await page.getByRole("button", { name: "Next step" }).click();
+  await page.getByRole("button", { name: "Next step", exact: true }).click();
   await expect(page.locator("#variables > div")).not.toHaveCount(0);
   await expect(page.locator("#call-stack li")).not.toHaveCount(0);
   await expect(page.locator("#pseudocode li[aria-current='step']")).toHaveCount(1);
@@ -83,7 +83,7 @@ test("all new algorithms expose a native teaching view", async ({ page }) => {
     await page.goto(`/?algorithm=${algorithm}&dataset=few-unique&detail=decisions&seed=17&size=8`);
     await expect(page.locator("#native-visual")).toHaveAttribute("data-kind", algorithm);
     await expect(page.locator("#native-visual")).toBeVisible();
-    await page.getByRole("button", { name: "Next step" }).click();
+    await page.getByRole("button", { name: "Next step", exact: true }).click();
     await expect(page.locator("#native-visual")).toBeVisible();
   }
 });
