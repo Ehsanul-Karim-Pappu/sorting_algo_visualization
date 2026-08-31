@@ -5,6 +5,19 @@ import {
   createTrace,
   TRACE_DETAIL_MODES,
 } from "./algorithms.js";
+import { CODE_LANGUAGES, codeFor } from "./learning/code-samples.js";
+import { chartPoints, runComplexityExperiment } from "./learning/complexity.js";
+import { downloadText, recordTraceVideo, stepSvg, traceJson } from "./learning/exporter.js";
+import { lessonFor, loadProgress, progressFor, saveProgress } from "./learning/lessons.js";
+import {
+  operationCost,
+  raceMaximum,
+  raceStanding,
+  stepForWork,
+  stepIndexForWork,
+  traceWork,
+} from "./learning/race.js";
+import { deriveLearningState } from "./learning/variables.js";
 
 const elements = {
   algorithm: document.querySelector("#algorithm"),
@@ -19,6 +32,12 @@ const elements = {
   compareToggle: document.querySelector("#compare-toggle"),
   compareField: document.querySelector("#compare-field"),
   compareAlgorithm: document.querySelector("#compare-algorithm"),
+  compareModeField: document.querySelector("#compare-mode-field"),
+  compareMode: document.querySelector("#compare-mode"),
+  predictToggle: document.querySelector("#predict-toggle"),
+  stabilityLab: document.querySelector("#stability-lab"),
+  complexityLab: document.querySelector("#complexity-lab"),
+  exportOpen: document.querySelector("#export-open"),
   shareLink: document.querySelector("#share-link"),
   shareStatus: document.querySelector("#share-status"),
   customDataPanel: document.querySelector("#custom-data-panel"),
@@ -26,8 +45,13 @@ const elements = {
   applyCustom: document.querySelector("#apply-custom"),
   customError: document.querySelector("#custom-error"),
   codeAlgorithm: document.querySelector("#code-algorithm"),
+  codeLanguage: document.querySelector("#code-language"),
+  codeTitle: document.querySelector("#code-title"),
   pseudocode: document.querySelector("#pseudocode"),
   invariant: document.querySelector("#invariant"),
+  variables: document.querySelector("#variables"),
+  callStack: document.querySelector("#call-stack"),
+  workCounter: document.querySelector("#work-counter"),
   stageTitle: document.querySelector("#stage-title"),
   tracePosition: document.querySelector("#trace-position"),
   focusMode: document.querySelector("#focus-mode"),
@@ -48,11 +72,17 @@ const elements = {
   compareStage: document.querySelector("#compare-stage"),
   compareStageTitle: document.querySelector("#compare-stage-title"),
   compareTracePosition: document.querySelector("#compare-trace-position"),
+  raceStatus: document.querySelector("#race-status"),
   compareNativeVisual: document.querySelector("#compare-native-visual"),
   compareBars: document.querySelector("#compare-bars"),
   compareComparisons: document.querySelector("#compare-comparisons"),
   compareSwaps: document.querySelector("#compare-swaps"),
   compareWrites: document.querySelector("#compare-writes"),
+  predictionCard: document.querySelector("#prediction-card"),
+  predictionQuestion: document.querySelector("#prediction-question"),
+  predictYes: document.querySelector("#predict-yes"),
+  predictNo: document.querySelector("#predict-no"),
+  predictionFeedback: document.querySelector("#prediction-feedback"),
   narrationIndex: document.querySelector("#narration-index"),
   stepTitle: document.querySelector("#step-title"),
   status: document.querySelector("#status"),
@@ -66,6 +96,10 @@ const elements = {
   timeline: document.querySelector("#timeline"),
   timelineValue: document.querySelector("#timeline-value"),
   algorithmDescription: document.querySelector("#algorithm-description"),
+  lessonGoal: document.querySelector("#lesson-goal"),
+  lessonProgress: document.querySelector("#lesson-progress"),
+  lessonCheckpoints: document.querySelector("#lesson-checkpoints"),
+  predictionScore: document.querySelector("#prediction-score"),
   comparisons: document.querySelector("#comparisons"),
   swaps: document.querySelector("#swaps"),
   writes: document.querySelector("#writes"),
@@ -76,6 +110,23 @@ const elements = {
   stabilityChip: document.querySelector("#stability-chip"),
   stableProperty: document.querySelector("#stable-property"),
   placeProperty: document.querySelector("#place-property"),
+  stabilityResult: document.querySelector("#stability-result"),
+  stabilityObservation: document.querySelector("#stability-observation"),
+  stabilityDetail: document.querySelector("#stability-detail"),
+  installApp: document.querySelector("#install-app"),
+  complexityDialog: document.querySelector("#complexity-dialog"),
+  complexityDataset: document.querySelector("#complexity-dataset"),
+  complexityMetric: document.querySelector("#complexity-metric"),
+  runComplexity: document.querySelector("#run-complexity"),
+  complexitySummary: document.querySelector("#complexity-summary"),
+  complexityChart: document.querySelector("#complexity-chart"),
+  complexityHead: document.querySelector("#complexity-head"),
+  complexityBody: document.querySelector("#complexity-body"),
+  exportDialog: document.querySelector("#export-dialog"),
+  exportSvg: document.querySelector("#export-svg"),
+  exportJson: document.querySelector("#export-json"),
+  exportVideo: document.querySelector("#export-video"),
+  exportStatus: document.querySelector("#export-status"),
 };
 
 const OPERATION_LABELS = Object.freeze({
@@ -105,6 +156,8 @@ const OPERATION_LABELS = Object.freeze({
   prefix: "Accumulate counts",
   bucket: "Assign bucket",
   digit: "Digit pass",
+  run: "Discover run",
+  fallback: "Change strategy",
   done: "Complete",
 });
 
@@ -119,15 +172,36 @@ const state = {
   compareFullTrace: null,
   compareTrace: null,
   compareEnabled: false,
+  comparisonMode: "race",
   focusMode: false,
+  predictEnabled: false,
+  pendingPrediction: null,
+  predictedSteps: new Set(),
+  predictionStats: { correct: 0, total: 0, streak: 0 },
+  stabilityLab: false,
+  learningProgress: loadProgress(window.localStorage),
+  installPrompt: null,
   cursor: 0,
   playing: false,
   playbackToken: 0,
 };
 
 const DATASET_TYPES = new Set(["random", "nearly-sorted", "reversed", "few-unique", "custom"]);
-const NATIVE_ALGORITHMS = new Set(["merge", "quick", "heap", "shell", "counting", "radix"]);
+const NATIVE_ALGORITHMS = new Set([
+  "merge",
+  "quick",
+  "heap",
+  "shell",
+  "counting",
+  "radix",
+  "quick-three",
+  "introsort",
+  "timsort",
+  "bucket",
+  "bitonic",
+]);
 const MAX_CUSTOM_VALUES = 64;
+const STABILITY_VALUES = Object.freeze([2, 2, 1, 3, 2, 1, 3, 1]);
 
 function makeElement(tagName, className, text) {
   const node = document.createElement(tagName);
@@ -199,6 +273,7 @@ function setCompareEnabled(enabled, { rebuild = true } = {}) {
   elements.compareToggle.setAttribute("aria-pressed", String(state.compareEnabled));
   elements.compareToggle.classList.toggle("active", state.compareEnabled);
   elements.compareField.hidden = !state.compareEnabled;
+  elements.compareModeField.hidden = !state.compareEnabled;
   elements.compareStage.hidden = !state.compareEnabled;
   elements.stageGrid.dataset.compare = String(state.compareEnabled);
   document.body.dataset.compare = String(state.compareEnabled);
@@ -229,9 +304,13 @@ function syncUrl() {
   params.set("seed", String(normalizedSeed()));
   params.set("size", elements.dataset.value === "custom" ? String(state.source.length) : elements.size.value);
   params.set("speed", elements.speed.value);
+  if (elements.codeLanguage.value !== "pseudocode") params.set("code", elements.codeLanguage.value);
+  if (state.predictEnabled) params.set("predict", "1");
+  if (state.stabilityLab) params.set("lab", "stability");
 
   if (state.compareEnabled) {
     params.set("compare", elements.compareAlgorithm.value);
+    params.set("clock", state.comparisonMode);
   }
   if (elements.dataset.value === "custom") {
     params.set("values", state.source.join(","));
@@ -250,6 +329,8 @@ function restoreUrlState() {
   const size = Number(params.get("size"));
   const seed = Number(params.get("seed"));
   const speed = Number(params.get("speed"));
+  const codeLanguage = params.get("code");
+  const comparisonMode = params.get("clock");
 
   if (algorithm && ALGORITHMS[algorithm]) elements.algorithm.value = algorithm;
   if (dataset && DATASET_TYPES.has(dataset)) elements.dataset.value = dataset;
@@ -263,6 +344,19 @@ function restoreUrlState() {
   if (params.has("speed") && Number.isInteger(speed) && speed >= 1 && speed <= 100) {
     elements.speed.value = String(speed);
   }
+  if (codeLanguage && CODE_LANGUAGES[codeLanguage]) elements.codeLanguage.value = codeLanguage;
+  state.predictEnabled = params.get("predict") === "1";
+  state.stabilityLab = params.get("lab") === "stability";
+  state.comparisonMode = comparisonMode === "progress" ? "progress" : "race";
+  elements.compareMode.value = state.comparisonMode;
+  elements.predictToggle.setAttribute("aria-pressed", String(state.predictEnabled));
+  elements.predictToggle.classList.toggle("active", state.predictEnabled);
+  elements.stabilityLab.setAttribute("aria-pressed", String(state.stabilityLab));
+  elements.stabilityLab.classList.toggle("active", state.stabilityLab);
+  if (state.stabilityLab) {
+    elements.dataset.value = "custom";
+    elements.customData.value = STABILITY_VALUES.join(", ");
+  }
   if (compare && ALGORITHMS[compare]) elements.compareAlgorithm.value = compare;
   if (params.has("values")) elements.customData.value = params.get("values");
 
@@ -271,11 +365,24 @@ function restoreUrlState() {
 }
 
 function maximumCursor() {
+  if (state.compareEnabled && state.compareTrace && state.comparisonMode === "race") {
+    return raceMaximum(state.trace, state.compareTrace);
+  }
   return Math.max(0, (state.trace?.steps.length ?? 1) - 1);
 }
 
 function currentStep() {
-  return state.trace.steps[state.cursor];
+  if (state.compareEnabled && state.compareTrace && state.comparisonMode === "race") {
+    return stepForWork(state.trace, state.cursor);
+  }
+  return state.trace.steps[Math.min(state.cursor, state.trace.steps.length - 1)];
+}
+
+function primaryCursor() {
+  if (state.compareEnabled && state.compareTrace && state.comparisonMode === "race") {
+    return stepIndexForWork(state.trace, state.cursor);
+  }
+  return Math.min(state.cursor, state.trace.steps.length - 1);
 }
 
 function tempoLabel(speed) {
@@ -305,9 +412,11 @@ function stopPlayback() {
 
 function buildPseudocode() {
   const algorithm = ALGORITHMS[elements.algorithm.value];
+  const language = elements.codeLanguage.value;
+  const lines = codeFor(elements.algorithm.value, language, algorithm.pseudocode);
   const fragment = document.createDocumentFragment();
 
-  algorithm.pseudocode.forEach((line, index) => {
+  lines.forEach((line, index) => {
     const item = document.createElement("li");
     const number = document.createElement("span");
     const code = document.createElement("code");
@@ -316,12 +425,14 @@ function buildPseudocode() {
     item.style.setProperty("--depth", line.depth);
     number.className = "code-line-number";
     number.textContent = String(index + 1).padStart(2, "0");
-    code.textContent = line.code;
+    code.textContent = line.text;
     item.append(number, code);
     fragment.append(item);
   });
 
   elements.pseudocode.replaceChildren(fragment);
+  elements.codeTitle.textContent = CODE_LANGUAGES[language];
+  elements.pseudocode.setAttribute("aria-label", `${algorithm.name} ${CODE_LANGUAGES[language]}`);
 }
 
 function renderAlgorithmDetails() {
@@ -362,7 +473,11 @@ function rebuildTraces({ animate = false, source = state.source } = {}) {
     state.trace = trace;
     state.compareFullTrace = compareFullTrace;
     state.compareTrace = compareTrace;
+    state.pendingPrediction = null;
+    state.predictedSteps = new Set();
     state.cursor = 0;
+    elements.predictionCard.hidden = true;
+    elements.predictionFeedback.textContent = "";
     elements.timeline.max = String(maximumCursor());
     buildPseudocode();
     renderAlgorithmDetails();
@@ -412,6 +527,23 @@ function createBarNode(item) {
   node.append(value, column, position);
   barNodes.set(item.id, node);
   return node;
+}
+
+function identitySuffix(item) {
+  if (!state.stabilityLab) return "";
+  const duplicates = state.source.filter((value) => Object.is(value, item.value));
+  if (duplicates.length < 2) return "";
+  const origin = Number.isInteger(item.origin)
+    ? item.origin
+    : Number.parseInt(String(item.id).replace("item-", ""), 10);
+  const occurrence = state.source
+    .slice(0, origin + 1)
+    .filter((value) => Object.is(value, item.value)).length - 1;
+  return String.fromCharCode(65 + Math.min(25, occurrence));
+}
+
+function displayItemValue(item) {
+  return `${item.value}${identitySuffix(item)}`;
 }
 
 function captureBarPositions() {
@@ -470,9 +602,9 @@ function renderBars(step, previousStep, animate) {
     node.dataset.inRange = String(inRange);
     node.style.setProperty("--bar-height", `${height}%`);
     node.style.setProperty("--bar-order", index);
-    node.querySelector(".bar-value").textContent = String(item.value);
+    node.querySelector(".bar-value").textContent = displayItemValue(item);
     node.querySelector(".bar-position").textContent = String(index + 1);
-    node.title = `Position ${index + 1}: ${item.value}`;
+    node.title = `Position ${index + 1}: ${displayItemValue(item)}`;
     fragment.append(node);
   });
 
@@ -527,7 +659,7 @@ function nativeHeading(label, detail) {
 }
 
 function nativeChip(item, { active = false, consumed = false, role = "default", label = "" } = {}) {
-  const chip = makeElement("span", "native-chip", item?.value ?? "—");
+  const chip = makeElement("span", "native-chip", item ? displayItemValue(item) : "—");
   chip.dataset.active = String(active);
   chip.dataset.consumed = String(consumed);
   chip.dataset.role = role;
@@ -733,6 +865,126 @@ function renderRadixView(step, container) {
   );
 }
 
+function renderQuickThreeView(step, container) {
+  const visual = step.visual?.kind === "quick-three" ? step.visual : null;
+  const low = visual?.low ?? step.range?.[0] ?? 0;
+  const high = visual?.high ?? (step.range?.[1] ?? step.items.length) - 1;
+  const less = visual?.less ?? low;
+  const scan = visual?.scan ?? less;
+  const greater = visual?.greater ?? high;
+  const groups = makeElement("div", "quick-partitions quick-three-partitions");
+  const sections = [
+    ["< pivot", step.items.slice(low, less), "accepted"],
+    ["= pivot", step.items.slice(less, scan), "pivot"],
+    ["unclassified", step.items.slice(scan, greater + 1), "pending"],
+    ["> pivot", step.items.slice(greater + 1, high + 1), "greater"],
+  ];
+  for (const [label, values, kind] of sections) {
+    const section = makeElement("section", "partition-group");
+    section.dataset.partition = kind;
+    section.append(makeElement("span", "buffer-label", label));
+    const row = makeElement("div", "buffer-values");
+    values.slice(0, 10).forEach((item) => row.append(nativeChip(item, {
+      active: step.activeIds.includes(item.id),
+      role: roleFor(item, step),
+    })));
+    if (values.length === 0) row.append(nativeChip(null));
+    section.append(row);
+    groups.append(section);
+  }
+  container.append(
+    nativeHeading("Dutch-national-flag partition", visual?.phase ?? "Three regions"),
+    groups,
+  );
+}
+
+function renderIntroView(step, container) {
+  const visual = step.visual?.kind === "introsort" ? step.visual : null;
+  const strategies = makeElement("div", "strategy-track");
+  const phase = visual?.phase ?? "start";
+  for (const [id, title, note] of [
+    ["partition", "Quick", "fast average"],
+    ["heap-fallback", "Heap", "worst-case guard"],
+    ["insertion", "Insertion", "small-range finish"],
+  ]) {
+    const card = makeElement("section", "strategy-card");
+    card.dataset.active = String(phase === id || (id === "partition" && ["compare", "pivot"].includes(phase)));
+    card.append(makeElement("strong", "", title), makeElement("span", "", note));
+    strategies.append(card);
+  }
+  const budget = makeElement("div", "depth-budget");
+  const limit = Math.max(1, visual?.depthLimit ?? 1);
+  const remaining = Math.max(0, visual?.depthRemaining ?? limit);
+  budget.style.setProperty("--depth-progress", `${(remaining / limit) * 100}%`);
+  budget.append(
+    makeElement("span", "buffer-label", "Recursion budget"),
+    makeElement("strong", "", `${remaining} / ${limit}`),
+  );
+  container.append(nativeHeading("Hybrid strategy", phase.replaceAll("-", " ")), strategies, budget);
+}
+
+function renderTimsortView(step, container) {
+  const visual = step.visual?.kind === "timsort" ? step.visual : null;
+  const stack = makeElement("div", "run-stack");
+  const runs = visual?.runs ?? [];
+  runs.forEach((run, index) => {
+    const card = makeElement("section", "run-card");
+    card.dataset.active = String(visual?.activeRuns?.includes(index));
+    card.style.setProperty("--run-share", String(Math.max(1, run.length)));
+    card.append(
+      makeElement("span", "buffer-label", `Run ${index + 1}`),
+      makeElement("strong", "", `${run.length} values`),
+      makeElement("small", "", `${run.start + 1}–${run.start + run.length}`),
+    );
+    stack.append(card);
+  });
+  if (runs.length === 0) stack.append(makeElement("p", "native-empty", "The run stack is empty."));
+  container.append(
+    nativeHeading("Natural run stack", `${visual?.phase ?? "discover"} · min run ${visual?.minimumRun ?? "—"}`),
+    stack,
+  );
+}
+
+function renderBucketView(step, container) {
+  const visual = step.visual?.kind === "bucket" ? step.visual : null;
+  const buckets = makeElement("div", "value-buckets");
+  (visual?.buckets ?? []).forEach((items, index) => {
+    const bucket = makeElement("section", "value-bucket");
+    bucket.dataset.active = String(index === visual?.activeBucket);
+    bucket.append(makeElement("span", "bucket-digit", index + 1));
+    const values = makeElement("div", "bucket-stack");
+    items.slice(0, 8).forEach((item) => values.append(nativeChip(item, {
+      active: item.id === visual?.activeId,
+      role: item.id === visual?.activeId ? "moving" : "default",
+    })));
+    bucket.append(values);
+    buckets.append(bucket);
+  });
+  container.append(
+    nativeHeading("Ordered value ranges", `${visual?.minimum ?? "—"} → ${visual?.maximum ?? "—"}`),
+    buckets,
+  );
+}
+
+function renderBitonicView(step, container) {
+  const visual = step.visual?.kind === "bitonic" ? step.visual : null;
+  const lanes = makeElement("div", "network-lanes");
+  step.items.slice(0, 24).forEach((item, index) => {
+    const lane = makeElement("span", "network-lane");
+    lane.dataset.active = String(step.active.includes(index));
+    lane.append(makeElement("small", "", index + 1), makeElement("strong", "", displayItemValue(item)));
+    lanes.append(lane);
+  });
+  container.append(
+    nativeHeading(
+      "Comparator network",
+      `${visual?.ascending === false ? "falling" : "rising"} · distance ${visual?.distance ?? "—"}`,
+    ),
+    lanes,
+    makeElement("p", "native-footnote", "Fixed lane pairs can compare in parallel hardware."),
+  );
+}
+
 function renderNativeView(step, algorithmId, container) {
   if (!NATIVE_ALGORITHMS.has(algorithmId)) {
     container.hidden = true;
@@ -753,12 +1005,20 @@ function renderNativeView(step, algorithmId, container) {
     shell: renderShellView,
     counting: renderCountingView,
     radix: renderRadixView,
+    "quick-three": renderQuickThreeView,
+    introsort: renderIntroView,
+    timsort: renderTimsortView,
+    bucket: renderBucketView,
+    bitonic: renderBitonicView,
   };
   renderers[algorithmId](step, container);
 }
 
 function compareCursor() {
   if (!state.compareTrace) return 0;
+  if (state.comparisonMode === "race") {
+    return stepIndexForWork(state.compareTrace, state.cursor);
+  }
   const primaryMaximum = maximumCursor();
   const compareMaximum = Math.max(0, state.compareTrace.steps.length - 1);
   if (primaryMaximum === 0) return compareMaximum;
@@ -804,6 +1064,19 @@ function renderComparison() {
   elements.compareComparisons.textContent = step.stats.comparisons.toLocaleString();
   elements.compareSwaps.textContent = step.stats.swaps.toLocaleString();
   elements.compareWrites.textContent = step.stats.writes.toLocaleString();
+  if (state.comparisonMode === "race") {
+    const standing = raceStanding(state.trace, state.compareTrace, state.cursor);
+    const primaryName = ALGORITHMS[elements.algorithm.value].shortName;
+    const comparisonName = ALGORITHMS[algorithmId].shortName;
+    const result = standing.primaryDone && standing.comparisonDone
+      ? standing.winner === "tie"
+        ? `Tie at ${standing.primaryTotal} primitive operations.`
+        : `${standing.winner === "primary" ? primaryName : comparisonName} used fewer primitive operations.`
+      : `${state.cursor} operation ticks · ${primaryName} ${Math.min(state.cursor, standing.primaryTotal)}/${standing.primaryTotal} · ${comparisonName} ${Math.min(state.cursor, standing.comparisonTotal)}/${standing.comparisonTotal}`;
+    elements.raceStatus.textContent = result;
+  } else {
+    elements.raceStatus.textContent = "Normalized progress aligns each algorithm by percentage, not by work performed.";
+  }
   renderNativeView(step, algorithmId, elements.compareNativeVisual);
   renderCompareBars(step);
 }
@@ -861,6 +1134,86 @@ function renderMetrics(step) {
   elements.writes.textContent = step.stats.writes.toLocaleString();
 }
 
+function renderLearningInspector(step) {
+  const learningState = deriveLearningState(elements.algorithm.value, step);
+  const variableFragment = document.createDocumentFragment();
+  for (const variable of learningState.variables) {
+    const group = document.createElement("div");
+    const term = document.createElement("dt");
+    const value = document.createElement("dd");
+    group.dataset.tone = variable.tone;
+    term.textContent = variable.name;
+    value.textContent = variable.value;
+    group.append(term, value);
+    variableFragment.append(group);
+  }
+  elements.variables.replaceChildren(variableFragment);
+  elements.workCounter.textContent = `${operationCost(step)} work`;
+
+  const stackFragment = document.createDocumentFragment();
+  for (const frame of learningState.stack) {
+    const item = document.createElement("li");
+    item.textContent = `${frame.label}: ${frame.range}`;
+    stackFragment.append(item);
+  }
+  if (learningState.stack.length === 0) {
+    stackFragment.append(makeElement("li", "", "iterative · whole array"));
+  }
+  elements.callStack.replaceChildren(stackFragment);
+}
+
+function renderLesson() {
+  const algorithmId = elements.algorithm.value;
+  const lesson = lessonFor(algorithmId, ALGORITHMS[algorithmId]);
+  const checkpoints = progressFor(primaryCursor(), state.trace.steps.length - 1, lesson);
+  const completed = checkpoints.filter((checkpoint) => checkpoint.complete).length;
+  const saved = Math.max(Number(state.learningProgress[algorithmId] ?? 0), completed);
+  if (saved !== state.learningProgress[algorithmId]) {
+    state.learningProgress[algorithmId] = saved;
+    saveProgress(window.localStorage, state.learningProgress);
+  }
+  elements.lessonGoal.textContent = lesson.goal;
+  elements.lessonProgress.textContent = `${saved} / ${checkpoints.length}`;
+  const fragment = document.createDocumentFragment();
+  checkpoints.forEach((checkpoint, index) => {
+    const item = makeElement("li", "", checkpoint.label);
+    item.dataset.complete = String(index < saved || checkpoint.complete);
+    fragment.append(item);
+  });
+  elements.lessonCheckpoints.replaceChildren(fragment);
+  elements.predictionScore.textContent = `${state.predictionStats.correct} / ${state.predictionStats.total}`;
+  elements.predictionScore.title = `Current streak: ${state.predictionStats.streak}`;
+}
+
+function stableOrderAt(step) {
+  for (const value of new Set(state.source)) {
+    const origins = step.items
+      .filter((item) => Object.is(item.value, value))
+      .map((item) => item.origin);
+    for (let index = 1; index < origins.length; index += 1) {
+      if (origins[index] < origins[index - 1]) return false;
+    }
+  }
+  return true;
+}
+
+function renderStability(step) {
+  elements.stabilityResult.hidden = !state.stabilityLab;
+  if (!state.stabilityLab) return;
+  if (step.type !== "done") {
+    elements.stabilityObservation.textContent = "Tracking A → B → C";
+    elements.stabilityObservation.dataset.positive = "true";
+    elements.stabilityDetail.textContent = "Letter badges preserve each duplicate's original identity while values move.";
+    return;
+  }
+  const preserved = stableOrderAt(step);
+  elements.stabilityObservation.textContent = preserved ? "Order preserved" : "Order changed";
+  elements.stabilityObservation.dataset.positive = String(preserved);
+  elements.stabilityDetail.textContent = preserved
+    ? `${ALGORITHMS[elements.algorithm.value].name} kept equal values in their original relative order on this run.`
+    : `${ALGORITHMS[elements.algorithm.value].name} reordered at least one equal-value identity, demonstrating instability.`;
+}
+
 function renderTransport() {
   if (!state.trace) return;
 
@@ -885,9 +1238,12 @@ function renderTransport() {
 function render(previousStep = null, animate = true) {
   const step = currentStep();
   const maximum = maximumCursor();
+  const visiblePrimaryCursor = primaryCursor();
 
   document.body.dataset.operation = step.type;
-  elements.tracePosition.textContent = `${state.cursor} / ${maximum}`;
+  elements.tracePosition.textContent = state.compareEnabled && state.comparisonMode === "race"
+    ? `${visiblePrimaryCursor} / ${state.trace.steps.length - 1} · clock ${state.cursor}/${maximum}`
+    : `${visiblePrimaryCursor} / ${maximum}`;
   elements.operationLabel.textContent = OPERATION_LABELS[step.type] ?? "Working";
   elements.narrationIndex.textContent = String(step.sequence).padStart(2, "0");
   elements.stepTitle.textContent = step.title;
@@ -900,6 +1256,9 @@ function render(previousStep = null, animate = true) {
   renderPseudocode(step);
   renderRangeReadout(step);
   renderMetrics(step);
+  renderLearningInspector(step);
+  renderLesson();
+  renderStability(step);
   renderComparison();
   renderTransport();
 }
@@ -910,6 +1269,55 @@ function setCursor(cursor, { animate = true } = {}) {
   const distance = Math.abs(nextCursor - state.cursor);
   state.cursor = nextCursor;
   render(previousStep, animate && distance === 1);
+}
+
+function stepAtCursor(cursor) {
+  if (state.compareEnabled && state.compareTrace && state.comparisonMode === "race") {
+    return stepForWork(state.trace, cursor);
+  }
+  return state.trace.steps[Math.min(state.trace.steps.length - 1, Math.max(0, cursor))];
+}
+
+function predictionKey(step) {
+  return `${elements.algorithm.value}:${state.source.join("|")}:${step.sequence}`;
+}
+
+function maybeShowPrediction(targetCursor) {
+  if (!state.predictEnabled || targetCursor <= state.cursor || targetCursor > maximumCursor()) return false;
+  const nextStep = stepAtCursor(targetCursor);
+  const current = currentStep();
+  if (!nextStep?.inspection || nextStep.sequence === current.sequence) return false;
+  const key = predictionKey(nextStep);
+  if (state.predictedSteps.has(key)) return false;
+
+  state.pendingPrediction = { targetCursor, step: nextStep, key, token: state.playbackToken };
+  const { left, operator, right } = nextStep.inspection;
+  elements.predictionQuestion.textContent = `Will ${left.label} ${left.value} ${operator} ${right.label} ${right.value} evaluate to Yes?`;
+  elements.predictionFeedback.textContent = "";
+  elements.predictionFeedback.removeAttribute("data-correct");
+  elements.predictionCard.hidden = false;
+  elements.predictYes.focus({ preventScroll: true });
+  return true;
+}
+
+function answerPrediction(answer) {
+  const pending = state.pendingPrediction;
+  if (!pending) return;
+  const correct = Boolean(answer) === Boolean(pending.step.inspection.truth);
+  state.predictionStats.total += 1;
+  state.predictionStats.correct += correct ? 1 : 0;
+  state.predictionStats.streak = correct ? state.predictionStats.streak + 1 : 0;
+  state.predictedSteps.add(pending.key);
+  elements.predictionFeedback.dataset.correct = String(correct);
+  elements.predictionFeedback.textContent = correct
+    ? `Correct — ${pending.step.inspection.result}. Streak ${state.predictionStats.streak}.`
+    : `Not this time — the condition evaluates to ${pending.step.inspection.result}.`;
+  elements.predictionScore.textContent = `${state.predictionStats.correct} / ${state.predictionStats.total}`;
+  state.pendingPrediction = null;
+  window.setTimeout(() => {
+    elements.predictionCard.hidden = true;
+    if (pending.token === state.playbackToken) setCursor(pending.targetCursor);
+  }, motionQuery.matches ? 0 : 420);
 }
 
 async function playTrace() {
@@ -928,6 +1336,11 @@ async function playTrace() {
   renderTransport();
 
   while (state.playing && token === state.playbackToken && state.cursor < maximumCursor()) {
+    if (maybeShowPrediction(state.cursor + 1)) {
+      state.playing = false;
+      renderTransport();
+      break;
+    }
     setCursor(state.cursor + 1);
 
     if (state.cursor < maximumCursor()) {
@@ -943,6 +1356,7 @@ async function playTrace() {
 
 function stepBy(amount) {
   stopPlayback();
+  if (amount === 1 && maybeShowPrediction(state.cursor + 1)) return;
   setCursor(state.cursor + amount);
 }
 
@@ -984,6 +1398,143 @@ async function copyShareLink() {
   }, 2400);
 }
 
+function svgElement(name, attributes = {}) {
+  const node = document.createElementNS("http://www.w3.org/2000/svg", name);
+  for (const [attribute, value] of Object.entries(attributes)) node.setAttribute(attribute, String(value));
+  return node;
+}
+
+function renderComplexityExperiment() {
+  const algorithmIds = state.compareEnabled
+    ? [elements.algorithm.value, elements.compareAlgorithm.value]
+    : [elements.algorithm.value];
+  const series = runComplexityExperiment({
+    algorithmIds,
+    dataset: elements.complexityDataset.value,
+    metric: elements.complexityMetric.value,
+    seed: normalizedSeed(),
+  });
+  const allValues = series.flatMap((result) => [
+    ...result.points.map((point) => point.value),
+    ...result.guide.map((point) => point.value),
+  ]);
+  const maximum = Math.max(1, ...allValues);
+  const fragment = document.createDocumentFragment();
+
+  for (let line = 0; line <= 4; line += 1) {
+    const y = 28 + line * 51;
+    fragment.append(svgElement("line", { x1: 28, y1: y, x2: 612, y2: y, class: "chart-grid" }));
+    const label = svgElement("text", { x: 4, y: y + 3, class: "chart-label" });
+    label.textContent = Math.round(maximum * (1 - line / 4)).toLocaleString();
+    fragment.append(label);
+  }
+
+  series.forEach((result, index) => {
+    const measured = chartPoints(result.points, 640, 260, 28, maximum);
+    const guide = chartPoints(result.guide, 640, 260, 28, maximum);
+    const suffix = index === 1 ? " comparison" : "";
+    fragment.append(svgElement("polyline", {
+      points: guide.map((point) => `${point.x},${point.y}`).join(" "),
+      class: `chart-guide${suffix}`,
+    }));
+    fragment.append(svgElement("polyline", {
+      points: measured.map((point) => `${point.x},${point.y}`).join(" "),
+      class: `chart-line${suffix}`,
+    }));
+    measured.forEach((point) => fragment.append(svgElement("circle", {
+      cx: point.x,
+      cy: point.y,
+      r: 5,
+      class: `chart-dot${suffix}`,
+    })));
+  });
+  elements.complexityChart.replaceChildren(fragment);
+
+  const headRow = document.createElement("tr");
+  headRow.append(makeElement("th", "", "Input size"));
+  series.forEach((result) => headRow.append(makeElement("th", "", ALGORITHMS[result.algorithmId].shortName)));
+  elements.complexityHead.replaceChildren(headRow);
+  const body = document.createDocumentFragment();
+  series[0].points.forEach((point, pointIndex) => {
+    const row = document.createElement("tr");
+    row.append(makeElement("th", "", point.size));
+    series.forEach((result) => row.append(makeElement("td", "", result.points[pointIndex].value.toLocaleString())));
+    body.append(row);
+  });
+  elements.complexityBody.replaceChildren(body);
+  const descriptions = series.map((result) => `${ALGORITHMS[result.algorithmId].shortName}: ${result.model.replaceAll("-", " ")}`);
+  elements.complexitySummary.textContent = `${descriptions.join(" · ")}. Solid lines are measured; dashed lines are normalized growth guides.`;
+}
+
+function downloadBlob(filename, blob) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.click();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function exportFilename(extension) {
+  return `sortscope-${elements.algorithm.value}-step-${currentStep().sequence}.${extension}`;
+}
+
+function exportCurrentSvg() {
+  downloadText(
+    exportFilename("svg"),
+    stepSvg(currentStep(), ALGORITHMS[elements.algorithm.value].name),
+    "image/svg+xml",
+  );
+  elements.exportStatus.textContent = "SVG snapshot downloaded.";
+}
+
+function exportCurrentJson() {
+  downloadText(
+    `sortscope-${elements.algorithm.value}-trace.json`,
+    traceJson(state.fullTrace),
+    "application/json",
+  );
+  elements.exportStatus.textContent = "Complete reversible trace downloaded.";
+}
+
+async function exportCurrentVideo() {
+  elements.exportVideo.disabled = true;
+  elements.exportStatus.textContent = "Rendering a compact lesson video…";
+  try {
+    const blob = await recordTraceVideo(state.trace, ALGORITHMS[elements.algorithm.value].name);
+    downloadBlob(`sortscope-${elements.algorithm.value}-lesson.webm`, blob);
+    elements.exportStatus.textContent = "WebM lesson downloaded.";
+  } catch (error) {
+    elements.exportStatus.textContent = error instanceof Error ? error.message : "Video export failed.";
+  } finally {
+    elements.exportVideo.disabled = false;
+  }
+}
+
+function setPredictEnabled(enabled) {
+  state.predictEnabled = Boolean(enabled);
+  state.pendingPrediction = null;
+  elements.predictionCard.hidden = true;
+  elements.predictToggle.setAttribute("aria-pressed", String(state.predictEnabled));
+  elements.predictToggle.classList.toggle("active", state.predictEnabled);
+  syncUrl();
+}
+
+function setStabilityLab(enabled) {
+  state.stabilityLab = Boolean(enabled);
+  elements.stabilityLab.setAttribute("aria-pressed", String(state.stabilityLab));
+  elements.stabilityLab.classList.toggle("active", state.stabilityLab);
+  if (state.stabilityLab) {
+    elements.dataset.value = "custom";
+    elements.customData.value = STABILITY_VALUES.join(", ");
+    updateDatasetControls();
+    generateData();
+  } else {
+    render(null, false);
+    syncUrl();
+  }
+}
+
 elements.algorithm.addEventListener("change", () => {
   const previousAlgorithm = state.trace?.algorithmId;
   normalizeComparisonChoice();
@@ -1023,6 +1574,35 @@ elements.compareAlgorithm.addEventListener("change", () => {
     elements.compareAlgorithm.value = previousAlgorithm;
   }
 });
+elements.compareMode.addEventListener("change", () => {
+  stopPlayback();
+  state.comparisonMode = elements.compareMode.value === "progress" ? "progress" : "race";
+  state.cursor = 0;
+  elements.timeline.max = String(maximumCursor());
+  render(null, false);
+  syncUrl();
+});
+elements.codeLanguage.addEventListener("change", () => {
+  buildPseudocode();
+  renderPseudocode(currentStep());
+  syncUrl();
+});
+elements.predictToggle.addEventListener("click", () => setPredictEnabled(!state.predictEnabled));
+elements.stabilityLab.addEventListener("click", () => setStabilityLab(!state.stabilityLab));
+elements.predictYes.addEventListener("click", () => answerPrediction(true));
+elements.predictNo.addEventListener("click", () => answerPrediction(false));
+elements.complexityLab.addEventListener("click", () => {
+  renderComplexityExperiment();
+  elements.complexityDialog.showModal();
+});
+elements.runComplexity.addEventListener("click", renderComplexityExperiment);
+elements.exportOpen.addEventListener("click", () => {
+  elements.exportStatus.textContent = "";
+  elements.exportDialog.showModal();
+});
+elements.exportSvg.addEventListener("click", exportCurrentSvg);
+elements.exportJson.addEventListener("click", exportCurrentJson);
+elements.exportVideo.addEventListener("click", exportCurrentVideo);
 elements.shareLink.addEventListener("click", copyShareLink);
 elements.focusMode.addEventListener("click", () => setFocusMode(!state.focusMode));
 elements.restart.addEventListener("click", restartTrace);
@@ -1068,6 +1648,24 @@ window.addEventListener("popstate", () => {
   generateData();
 });
 
+window.addEventListener("beforeinstallprompt", (event) => {
+  event.preventDefault();
+  state.installPrompt = event;
+  elements.installApp.hidden = false;
+});
+
+window.addEventListener("appinstalled", () => {
+  state.installPrompt = null;
+  elements.installApp.hidden = true;
+});
+
+elements.installApp.addEventListener("click", async () => {
+  if (!state.installPrompt) return;
+  await state.installPrompt.prompt();
+  state.installPrompt = null;
+  elements.installApp.hidden = true;
+});
+
 restoreUrlState();
 updateSizeLabel();
 updateSpeedLabel();
@@ -1076,4 +1674,8 @@ if (!generateData()) {
   elements.customData.value = "42, 17, 63, 8, 29, 51, 34, 12";
   updateDatasetControls();
   generateData();
+}
+
+if ("serviceWorker" in navigator && window.location.protocol !== "file:") {
+  window.addEventListener("load", () => navigator.serviceWorker.register("./service-worker.js").catch(() => {}));
 }

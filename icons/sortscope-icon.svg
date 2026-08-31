@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="SortScope">
+  <rect width="512" height="512" rx="112" fill="#10131b"/>
+  <rect x="92" y="276" width="58" height="130" rx="24" fill="#55e6d2"/>
+  <rect x="182" y="174" width="58" height="232" rx="24" fill="#ff7a8a"/>
+  <rect x="272" y="222" width="58" height="184" rx="24" fill="#ffd166"/>
+  <rect x="362" y="94" width="58" height="312" rx="24" fill="#b9ef72"/>
+  <circle cx="121" cy="246" r="17" fill="#f5f4ed"/>
+  <circle cx="211" cy="144" r="17" fill="#f5f4ed"/>
+  <circle cx="301" cy="192" r="17" fill="#f5f4ed"/>
+  <circle cx="391" cy="64" r="17" fill="#f5f4ed"/>
+</svg>

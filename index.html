@@ -8,7 +8,12 @@
       content="SortScope is an interactive sorting algorithm theater with synchronized movement, pseudocode, narration, metrics, and a reversible timeline."
     />
     <meta name="theme-color" content="#10131b" />
-    <title>SortScope — See Every Sorting Decision</title>
+    <meta name="application-name" content="SortScope" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <title>SortScope Learning Lab — See Every Sorting Decision</title>
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" href="./icons/sortscope-icon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
@@ -62,14 +67,23 @@
                 <optgroup label="Divide and conquer">
                   <option value="merge">Merge Sort</option>
                   <option value="quick">Quick Sort</option>
+                  <option value="quick-three">Three-Way Quick Sort</option>
                 </optgroup>
                 <optgroup label="Tree and gap based">
                   <option value="heap">Heap Sort</option>
                   <option value="shell">Shell Sort</option>
                 </optgroup>
+                <optgroup label="Real-world hybrids">
+                  <option value="timsort">TimSort</option>
+                  <option value="introsort">IntroSort</option>
+                </optgroup>
                 <optgroup label="Non-comparison">
                   <option value="counting">Counting Sort</option>
                   <option value="radix">Radix Sort</option>
+                  <option value="bucket">Bucket Sort</option>
+                </optgroup>
+                <optgroup label="Parallel hardware">
+                  <option value="bitonic">Bitonic Sort Network</option>
                 </optgroup>
               </select>
             </label>
@@ -140,8 +154,41 @@
                 <option value="shell">Shell Sort</option>
                 <option value="counting">Counting Sort</option>
                 <option value="radix">Radix Sort</option>
+                <option value="quick-three">Three-Way Quick Sort</option>
+                <option value="timsort">TimSort</option>
+                <option value="introsort">IntroSort</option>
+                <option value="bucket">Bucket Sort</option>
+                <option value="bitonic">Bitonic Sort Network</option>
               </select>
             </label>
+
+            <label id="compare-mode-field" class="field compare-field" for="compare-mode" hidden>
+              <span>Comparison clock</span>
+              <select id="compare-mode">
+                <option value="race">Fair operation race</option>
+                <option value="progress">Normalized progress</option>
+              </select>
+            </label>
+
+            <button id="predict-toggle" class="secondary-button" type="button" aria-pressed="false">
+              <span aria-hidden="true">?</span>
+              Predict next step
+            </button>
+
+            <button id="stability-lab" class="secondary-button" type="button" aria-pressed="false">
+              <span aria-hidden="true">≡</span>
+              Stability Lab
+            </button>
+
+            <button id="complexity-lab" class="secondary-button" type="button">
+              <span aria-hidden="true">⌁</span>
+              Complexity Lab
+            </button>
+
+            <button id="export-open" class="secondary-button" type="button">
+              <span aria-hidden="true">↓</span>
+              Export
+            </button>
 
             <button id="share-link" class="secondary-button" type="button">
               <span aria-hidden="true">↗</span>
@@ -174,7 +221,18 @@
                 <p class="panel-kicker">01 / Code trace</p>
                 <h2 id="code-title">Pseudocode</h2>
               </div>
-              <span id="code-algorithm" class="outline-chip">Bubble</span>
+              <div class="code-heading-tools">
+                <label class="compact-select" for="code-language">
+                  <span class="sr-only">Code language</span>
+                  <select id="code-language" aria-label="Code language">
+                    <option value="pseudocode">Pseudocode</option>
+                    <option value="javascript">JavaScript</option>
+                    <option value="python">Python</option>
+                    <option value="cpp">C++</option>
+                  </select>
+                </label>
+                <span id="code-algorithm" class="outline-chip">Bubble</span>
+              </div>
             </header>
 
             <ol id="pseudocode" class="pseudocode" aria-label="Algorithm pseudocode"></ol>
@@ -183,6 +241,18 @@
               <span>Invariant</span>
               <p id="invariant"></p>
             </div>
+
+            <section class="variable-card" aria-labelledby="variable-title">
+              <div class="subheading-row">
+                <h3 id="variable-title">Live variables</h3>
+                <span id="work-counter" class="status-chip">0 work</span>
+              </div>
+              <dl id="variables" class="variable-grid"></dl>
+              <div class="call-stack-heading">
+                <span>Scope / call stack</span>
+              </div>
+              <ol id="call-stack" class="call-stack"></ol>
+            </section>
           </aside>
 
           <section class="theater" aria-labelledby="stage-title">
@@ -257,6 +327,7 @@
                   </div>
                   <output id="compare-trace-position">0 / 0</output>
                 </header>
+                <p id="race-status" class="race-status" aria-live="polite"></p>
                 <div id="compare-native-visual" class="native-visual compact" hidden></div>
                 <div id="compare-bars" class="compare-bars" role="img" aria-label="Comparison algorithm visualization"></div>
                 <dl class="compare-metrics" aria-label="Comparison algorithm metrics">
@@ -266,6 +337,19 @@
                 </dl>
               </section>
             </div>
+
+            <section id="prediction-card" class="prediction-card" aria-labelledby="prediction-title" hidden>
+              <div>
+                <p class="panel-kicker">Prediction checkpoint</p>
+                <h3 id="prediction-title">What happens next?</h3>
+                <p id="prediction-question"></p>
+              </div>
+              <div class="prediction-actions">
+                <button id="predict-yes" class="prediction-answer" type="button">Yes</button>
+                <button id="predict-no" class="prediction-answer" type="button">No</button>
+              </div>
+              <output id="prediction-feedback" aria-live="polite"></output>
+            </section>
 
             <div class="narration">
               <span id="narration-index" class="narration-index">00</span>
@@ -327,6 +411,19 @@
 
             <p id="algorithm-description" class="algorithm-description"></p>
 
+            <section class="lesson-card" aria-labelledby="lesson-title">
+              <div class="subheading-row">
+                <h3 id="lesson-title">Guided lesson</h3>
+                <output id="lesson-progress">0 / 3</output>
+              </div>
+              <p id="lesson-goal"></p>
+              <ol id="lesson-checkpoints" class="lesson-checkpoints"></ol>
+              <div class="prediction-score">
+                <span>Prediction score</span>
+                <strong id="prediction-score">0 / 0</strong>
+              </div>
+            </section>
+
             <dl class="metrics" aria-label="Live operation metrics">
               <div>
                 <dt>Comparisons</dt>
@@ -359,15 +456,85 @@
               <span id="stable-property">Stable</span>
               <span id="place-property">In place</span>
             </div>
+
+            <section id="stability-result" class="stability-result" aria-labelledby="stability-title" hidden>
+              <div class="subheading-row">
+                <h3 id="stability-title">Duplicate identity</h3>
+                <span id="stability-observation" class="status-chip">Observing</span>
+              </div>
+              <p id="stability-detail"></p>
+            </section>
           </aside>
         </div>
       </main>
 
       <footer>
         <span>SortScope</span>
-        <p>Built with browser-native JavaScript. No framework, build step, or runtime dependency.</p>
+        <p>Learning Lab · browser-native, installable, and available offline.</p>
+        <button id="install-app" class="footer-button" type="button" hidden>Install app</button>
       </footer>
     </div>
+
+    <dialog id="complexity-dialog" class="lab-dialog" aria-labelledby="complexity-dialog-title">
+      <form method="dialog" class="dialog-shell">
+        <header class="dialog-heading">
+          <div>
+            <p class="panel-kicker">Measured growth</p>
+            <h2 id="complexity-dialog-title">Complexity Lab</h2>
+            <p>Run the same input shape at increasing sizes and compare measured work with the expected growth curve.</p>
+          </div>
+          <button class="dialog-close" value="close" aria-label="Close Complexity Lab">×</button>
+        </header>
+        <div class="lab-controls">
+          <label class="field" for="complexity-dataset">
+            <span>Input shape</span>
+            <select id="complexity-dataset">
+              <option value="random">Random</option>
+              <option value="nearly-sorted">Nearly sorted</option>
+              <option value="reversed">Reversed</option>
+              <option value="few-unique">Few unique values</option>
+            </select>
+          </label>
+          <label class="field" for="complexity-metric">
+            <span>Metric</span>
+            <select id="complexity-metric">
+              <option value="work">Primitive work</option>
+              <option value="comparisons">Comparisons</option>
+              <option value="writes">Writes</option>
+              <option value="swaps">Swaps</option>
+            </select>
+          </label>
+          <button id="run-complexity" class="new-data-button" type="button">Run experiment</button>
+        </div>
+        <div id="complexity-summary" class="complexity-summary" aria-live="polite"></div>
+        <svg id="complexity-chart" class="complexity-chart" viewBox="0 0 640 260" role="img" aria-label="Measured complexity chart"></svg>
+        <div class="table-scroll">
+          <table class="lab-table">
+            <caption class="sr-only">Measured complexity values by input size</caption>
+            <thead id="complexity-head"></thead>
+            <tbody id="complexity-body"></tbody>
+          </table>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="export-dialog" class="lab-dialog compact-dialog" aria-labelledby="export-dialog-title">
+      <form method="dialog" class="dialog-shell">
+        <header class="dialog-heading">
+          <div>
+            <p class="panel-kicker">Take the lesson with you</p>
+            <h2 id="export-dialog-title">Export this trace</h2>
+          </div>
+          <button class="dialog-close" value="close" aria-label="Close export options">×</button>
+        </header>
+        <div class="export-grid">
+          <button id="export-svg" class="export-option" type="button"><strong>SVG snapshot</strong><span>Current step as a crisp image</span></button>
+          <button id="export-json" class="export-option" type="button"><strong>Trace JSON</strong><span>Every reversible state and metric</span></button>
+          <button id="export-video" class="export-option" type="button"><strong>WebM lesson</strong><span>A compact animated trace video</span></button>
+        </div>
+        <output id="export-status" class="export-status" aria-live="polite"></output>
+      </form>
+    </dialog>
 
     <script type="module" src="./app.js"></script>
   </body>

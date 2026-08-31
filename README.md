@@ -1,18 +1,25 @@
-# SortScope
+# SortScope Learning Lab
 
-SortScope is a teaching-first sorting algorithm visualizer. It keeps the moving values, current pseudocode line, comparison equation, plain-language narration, metrics, and timeline on the same trace so every algorithmic decision can be inspected.
+SortScope is a teaching-first sorting laboratory. It keeps moving values, real code, live variables, algorithm-specific structures, plain-language narration, metrics, and a reversible timeline on one trace so every decision can be inspected and tested.
 
 **Live demo:** [ehsanul-karim-pappu.github.io/sorting_algo_visualization](https://ehsanul-karim-pappu.github.io/sorting_algo_visualization/)
 
 ## What makes it useful
 
-- Ten algorithms spanning foundational, divide-and-conquer, heap/gap, and distribution families
+- Fifteen algorithms spanning foundational, divide-and-conquer, hybrid, distribution, and parallel-network families
 - Values retain their identity and physically move between positions
 - Synchronized pseudocode highlighting and decision narration
 - A comparison tray that shows the exact condition and result
 - Play, pause, forward, backward, restart, replay, and timeline scrubbing
 - Algorithm-native views for merge buffers, pivot partitions, heap trees, Shell gaps, count tables, and radix buckets
 - Synchronized side-by-side comparison on the same input
+- A fair race clock based on comparisons plus writes, with normalized progress available separately
+- Predict-the-next-decision checkpoints with immediate explanations and a score
+- A live variable and recursive call-scope inspector
+- Pseudocode, JavaScript, Python, and C++ views synchronized to the current operation
+- A Stability Lab that gives duplicate values persistent `A/B/C` identities
+- A Complexity Lab that measures growth and plots it against a normalized Big-O guide
+- Three-step guided lessons with progress stored locally in the browser
 - Random, nearly sorted, reversed, duplicate-heavy, and custom datasets
 - Deterministic seeds and shareable URL state
 - Full, decision-only, and milestone trace densities
@@ -22,7 +29,8 @@ SortScope is a teaching-first sorting algorithm visualizer. It keeps the moving 
 - Algorithm invariants, complexity, stability, and memory properties
 - Responsive keyboard-accessible interface with reduced-motion support
 - Pattern-and-color state markers, semantic labels, and reduced-motion support
-- No framework, runtime dependency, bundler, or build step
+- SVG snapshot, full trace JSON, and WebM lesson-video export
+- Installable offline PWA with no framework, bundler, application server, or account
 
 ## Algorithms
 
@@ -38,6 +46,27 @@ SortScope is a teaching-first sorting algorithm visualizer. It keeps the moving 
 | Counting Sort | `O(n + k)` | `O(n + k)` | `O(n + k)` | `O(n + k)` | Yes |
 | Radix Sort | `O(d(n + 10))` | `O(d(n + 10))` | `O(d(n + 10))` | `O(n + 10)` | Yes |
 | Cocktail Shaker Sort | `O(n)` | `O(n²)` | `O(n²)` | `O(1)` | Yes |
+| Three-Way Quick Sort | `O(n)`* | `O(n log n)` | `O(n²)` | `O(log n)` | No |
+| IntroSort | `O(n log n)` | `O(n log n)` | `O(n log n)` | `O(log n)` | No |
+| TimSort | `O(n)` | `O(n log n)` | `O(n log n)` | `O(n)` | Yes |
+| Bucket Sort | `O(n + k)` | `O(n + k)` | `O(n²)` | `O(n + k)` | Yes |
+| Bitonic Sort Network | `O(n log² n)` | `O(n log² n)` | `O(n log² n)` | `O(log n)` | No |
+
+\* Three-way Quick Sort reaches linear behavior when duplicate-heavy input collapses into one equal region. The TimSort teaching trace models natural runs, minimum-run extension, and merge-stack balancing; it intentionally omits production galloping optimizations.
+
+## Learning Lab modes
+
+### Fair algorithm race
+
+Race mode advances both algorithms on a common primitive-work clock. One tick represents one comparison or one array write; a swap therefore contributes two writes. An algorithm that finishes first freezes on its sorted result while the other continues. Normalized progress remains available when the goal is to compare structural phases rather than work.
+
+### Predict and inspect
+
+Prediction mode pauses before a Boolean comparison and asks the learner to decide whether the condition will be true. The live inspector simultaneously exposes variables such as cursors, pivots, boundaries, gaps, heap size, digit place, run stack, recursion budget, and active call scope.
+
+### Complexity and stability labs
+
+Complexity Lab runs deterministic experiments at sizes 4, 8, 12, 16, 24, and 32, then plots measured comparisons, writes, swaps, or combined work against the algorithm family's expected growth shape. Stability Lab tags duplicates by identity so equal-value reordering is visible instead of merely described.
 
 ## How the trace works
 
@@ -70,11 +99,11 @@ Then open [http://localhost:4173](http://localhost:4173).
 ```bash
 npm run check
 npm test
-npx playwright install chromium
+npx playwright install chromium firefox webkit
 npm run test:visual
 ```
 
-The test suite covers sorting correctness, input immutability, stable ordering, trace coherence, native structural state, trace-density filtering, exact representative metrics, dataset generation, DOM/controller contracts, accessibility hooks, responsive layout invariants, and automated screenshots at 320, 390, 768, and 1440 pixels. CI uploads the rendered screenshots as an artifact.
+The suite covers all fifteen implementations, arbitrary-length bitonic networks, stable identity, reversible snapshots, fair race mapping, deterministic complexity experiments, synchronized code, exports, offline metadata, DOM contracts, accessibility budgets, and responsive layouts at 320, 390, 768, and 1440 pixels. GitHub Actions runs the rendered interaction suite in Chromium, Firefox, and WebKit and uploads screenshots.
 
 ## Keyboard shortcuts
 
@@ -97,12 +126,17 @@ The test suite covers sorting correctness, input immutability, stable ordering, 
 ├── app.js                  # Timeline, playback, and keyed DOM renderer
 ├── algorithms.js           # Small public facade and dataset presets
 ├── algorithms/             # Catalog, shared recorder, detail filters, and one module per algorithm
-├── playwright.config.js    # Responsive browser-test configuration
+├── learning/               # Race clock, variables, code, lessons, experiments, and exports
+├── manifest.webmanifest    # Installable application metadata
+├── service-worker.js       # Versioned offline application shell
+├── icons/                  # PWA identity assets
+├── playwright.config.js    # Cross-browser responsive configuration
 ├── package.json            # Unit, syntax, and browser-test commands
 ├── .github/workflows/      # Pull-request CI
 └── tests/
     ├── algorithms.test.js  # Correctness, trace, stability, and metrics
-    ├── ui.test.js          # Static controller and accessibility contracts
+    ├── learning.test.js    # Race, complexity, code, lessons, and exports
+    ├── ui.test.js          # Static controller, PWA, and accessibility contracts
     └── visual/             # Responsive screenshots and interaction checks
 ```
 

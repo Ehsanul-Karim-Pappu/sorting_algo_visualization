@@ -68,6 +68,11 @@ test("the page ships the complete learning and playback surfaces", async () => {
     "shell",
     "counting",
     "radix",
+    "quick-three",
+    "introsort",
+    "timsort",
+    "bucket",
+    "bitonic",
   ]) {
     assert.match(html, new RegExp(`value="${algorithm}"`));
   }
@@ -82,6 +87,12 @@ test("the page ships the complete learning and playback surfaces", async () => {
     "previous",
     "next",
     "timeline",
+    "variables",
+    "call-stack",
+    "prediction-card",
+    "complexity-dialog",
+    "export-dialog",
+    "stability-result",
   ]) {
     assert.match(html, new RegExp(`id="${id}"`));
   }
@@ -97,6 +108,11 @@ test("the page ships the complete learning and playback surfaces", async () => {
   assert.match(app, /renderNativeView/);
   assert.match(app, /renderComparison/);
   assert.match(app, /setFocusMode/);
+  assert.match(app, /raceMaximum/);
+  assert.match(app, /maybeShowPrediction/);
+  assert.match(app, /renderComplexityExperiment/);
+  assert.match(app, /renderLearningInspector/);
+  assert.match(app, /recordTraceVideo/);
   assert.match(styles, /@media \(prefers-reduced-motion: reduce\)/);
   assert.match(styles, /@media \(max-width: 660px\)/);
   assert.match(styles, /\.inspection\s*\{\s*height: 112px;\s*\}/);
@@ -118,6 +134,11 @@ test("algorithm implementations are split into focused modules", async () => {
     "shell.js",
     "counting.js",
     "radix.js",
+    "quick-three.js",
+    "introsort.js",
+    "timsort.js",
+    "bucket.js",
+    "bitonic.js",
     "catalog.js",
     "shared.js",
     "trace-detail.js",
@@ -127,4 +148,17 @@ test("algorithm implementations are split into focused modules", async () => {
 
   const facade = await source("algorithms.js");
   assert.equal(facade.split("\n").length < 150, true, "algorithms.js should remain a small facade");
+});
+
+test("the installable app shell contains every local module", async () => {
+  const [html, manifest, worker] = await Promise.all([
+    source("index.html"),
+    source("manifest.webmanifest"),
+    source("service-worker.js"),
+  ]);
+  assert.match(html, /rel="manifest"/);
+  assert.equal(JSON.parse(manifest).display, "standalone");
+  for (const path of ["./app.js", "./algorithms.js", "./learning/race.js", "./learning/exporter.js"]) {
+    assert.match(worker, new RegExp(path.replaceAll(".", "\\.")));
+  }
 });
