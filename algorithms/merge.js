@@ -1,6 +1,7 @@
 import { comparison, integerBounds, moveItemTo, range } from "./shared.js";
 
 export function mergeTrace(items, stats, record) {
+  const callStack = [];
   function mergeVisual(start, middle, end, phase, leftItems, rightItems, extra = {}) {
     return {
       kind: "merge",
@@ -16,6 +17,7 @@ export function mergeTrace(items, stats, record) {
         id: item.id,
         value: item.value,
       })),
+      stack: callStack.map((frame) => ({ ...frame })),
       ...extra,
     };
   }
@@ -24,6 +26,8 @@ export function mergeTrace(items, stats, record) {
     if (end - start <= 1) {
       return;
     }
+
+    callStack.push({ start, end, inclusive: false });
 
     const middle = start + Math.floor((end - start) / 2);
     record({
@@ -186,6 +190,7 @@ export function mergeTrace(items, stats, record) {
         writeIndex: end,
       }),
     });
+    callStack.pop();
   }
 
   sortRange(0, items.length);

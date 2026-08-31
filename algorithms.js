@@ -1,14 +1,19 @@
 import { ALGORITHMS } from "./algorithms/catalog.js";
 import { bubbleTrace } from "./algorithms/bubble.js";
+import { bitonicTrace } from "./algorithms/bitonic.js";
+import { bucketTrace } from "./algorithms/bucket.js";
 import { cocktailTrace } from "./algorithms/cocktail.js";
 import { countingTrace } from "./algorithms/counting.js";
 import { heapTrace } from "./algorithms/heap.js";
 import { insertionTrace } from "./algorithms/insertion.js";
+import { introsortTrace } from "./algorithms/introsort.js";
 import { mergeTrace } from "./algorithms/merge.js";
 import { quickTrace } from "./algorithms/quick.js";
+import { quickThreeTrace } from "./algorithms/quick-three.js";
 import { radixTrace } from "./algorithms/radix.js";
 import { selectionTrace } from "./algorithms/selection.js";
 import { shellTrace } from "./algorithms/shell.js";
+import { timsortTrace } from "./algorithms/timsort.js";
 import { createStats, itemize, makeRecorder, normalizeInput, range } from "./algorithms/shared.js";
 import { applyTraceDetail, TRACE_DETAIL_MODES } from "./algorithms/trace-detail.js";
 
@@ -27,6 +32,11 @@ const TRACE_BUILDERS = Object.freeze({
   counting: countingTrace,
   radix: radixTrace,
   cocktail: cocktailTrace,
+  "quick-three": quickThreeTrace,
+  introsort: introsortTrace,
+  timsort: timsortTrace,
+  bucket: bucketTrace,
+  bitonic: bitonicTrace,
 });
 
 export function createTrace(algorithmId, input) {

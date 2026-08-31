@@ -75,7 +75,7 @@ for (const algorithmId of ALGORITHM_IDS) {
 test("stable algorithms preserve the original order of equal values", () => {
   const input = [3, 1, 3, 2, 1, 3];
 
-  for (const algorithmId of ["bubble", "insertion", "merge", "counting", "radix", "cocktail"]) {
+  for (const algorithmId of ["bubble", "insertion", "merge", "counting", "radix", "cocktail", "timsort", "bucket"]) {
     const finalItems = createTrace(algorithmId, input).steps.at(-1).items;
 
     for (const value of new Set(input)) {
@@ -126,7 +126,19 @@ test("quick and heap traces expose their defining operations", () => {
 });
 
 test("structural algorithms expose native visualization state", () => {
-  for (const algorithmId of ["merge", "quick", "heap", "shell", "counting", "radix"]) {
+  for (const algorithmId of [
+    "merge",
+    "quick",
+    "heap",
+    "shell",
+    "counting",
+    "radix",
+    "quick-three",
+    "introsort",
+    "timsort",
+    "bucket",
+    "bitonic",
+  ]) {
     const trace = createTrace(algorithmId, [9, 3, 7, 1, 5, 3]);
     const structuralSteps = trace.steps.filter((step) => step.visual?.kind === algorithmId);
     assert.equal(structuralSteps.length > 0, true, `${algorithmId} should expose native state`);

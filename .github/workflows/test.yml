@@ -30,10 +30,10 @@ jobs:
       - name: Run algorithm tests
         run: npm test
 
-      - name: Install Chromium
-        run: npx playwright install --with-deps chromium
+      - name: Install Chromium, Firefox, and WebKit
+        run: npx playwright install --with-deps chromium firefox webkit
 
-      - name: Run responsive visual regression tests
+      - name: Run cross-browser learning and responsive tests
         run: npm run test:visual
 
       - name: Upload responsive screenshots

@@ -2,6 +2,7 @@ import { comparison, integerBounds, moveItemTo, range } from "./shared.js";
 
 export function quickTrace(items, stats, record) {
   const settled = new Set();
+  const callStack = [];
   const quickVisual = (phase, start, end, pivotId, boundary, scan = null) => ({
     kind: "quick",
     phase,
@@ -10,12 +11,15 @@ export function quickTrace(items, stats, record) {
     pivotId,
     boundary,
     scan,
+    stack: callStack.map((frame) => ({ ...frame })),
   });
 
   function sortRange(start, end, depth = 0) {
     if (start > end) {
       return;
     }
+
+    callStack.push({ start, end, inclusive: true });
 
     if (start === end) {
       settled.add(start);
@@ -30,6 +34,7 @@ export function quickTrace(items, stats, record) {
         range: [start, end + 1],
         visual: quickVisual("isolated", start, end, items[start].id, start, start),
       });
+      callStack.pop();
       return;
     }
 
@@ -181,6 +186,7 @@ export function quickTrace(items, stats, record) {
       });
       sortRange(boundary + 1, end, depth + 1);
     }
+    callStack.pop();
   }
 
   sortRange(0, items.length - 1);

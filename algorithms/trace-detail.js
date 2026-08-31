@@ -29,6 +29,8 @@ const DECISION_TYPES = new Set([
   "merged",
   "gap-done",
   "early-stop",
+  "run",
+  "fallback",
   "done",
 ]);
 
@@ -45,6 +47,8 @@ const MILESTONE_TYPES = new Set([
   "prefix",
   "digit",
   "early-stop",
+  "run",
+  "fallback",
   "done",
 ]);
 

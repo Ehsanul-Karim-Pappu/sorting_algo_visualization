@@ -1,0 +1,19 @@
+{
+  "name": "SortScope Learning Lab",
+  "short_name": "SortScope",
+  "description": "An interactive, teaching-first sorting algorithm laboratory.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#efede6",
+  "theme_color": "#10131b",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "./icons/sortscope-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
