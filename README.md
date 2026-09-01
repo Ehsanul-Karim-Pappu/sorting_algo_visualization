@@ -4,6 +4,12 @@ SortScope is a teaching-first sorting laboratory. It keeps moving values, real c
 
 **Live demo:** [ehsanul-karim-pappu.github.io/sorting_algo_visualization](https://ehsanul-karim-pappu.github.io/sorting_algo_visualization/)
 
+## Native Android edition
+
+SortScope also includes a fully native Kotlin and Jetpack Compose Android application in [`android-native/`](android-native/). It is not a WebView wrapper: all fifteen algorithms, traces, playback controls, lessons, comparison metrics, prediction checkpoints, stability identities, and complexity experiments run locally. The APK declares no `INTERNET` permission and continues working completely offline.
+
+GitHub Actions builds an installable debug APK for every Android pull request and uploads it as the `SortScope-native-android` artifact. Native build and architecture details are in the [Android README](android-native/README.md).
+
 ## What makes it useful
 
 - Fifteen algorithms spanning foundational, divide-and-conquer, hybrid, distribution, and parallel-network families

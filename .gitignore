@@ -2,3 +2,7 @@ node_modules/
 playwright-report/
 test-results/
 .DS_Store
+android-native/.gradle/
+android-native/local.properties
+android-native/**/build/
+*.apk
